@@ -248,14 +248,14 @@ mod tests {
     #[test]
     fn test_file_exists() {
         assert!(file_exists("/etc/passwd"));
-        assert!(!file_exists("/nonexistentfile"));
+        assert!(!file_exists("/nonexistent-file"));
     }
 
     #[test]
     fn test_read_file_content() {
         let content = read_file_content("/etc/passwd");
         assert!(content.is_ok());
-        let content = read_file_content("/nonexistentfile");
+        let content = read_file_content("/nonexistent-file");
         assert!(content.is_err());
     }
 
