@@ -165,6 +165,16 @@ pub struct CommandRepository {
     commands: Vec<CommandStruct>,
 }
 
+impl From<Vec<&str>> for CommandRepository {
+    fn from(value: Vec<&str>) -> Self {
+        let mut repo = CommandRepository::new();
+        for command in value {
+            repo.add_command(CommandFactory::new(command));
+        }
+        repo
+    }
+}
+
 impl CommandRepository {
     pub fn new() -> Self {
         CommandRepository {
@@ -301,5 +311,14 @@ mod tests {
         assert_eq!(format!("{}", CommandStatus::Warning), "\x1b[33m");
         assert_eq!(format!("{}", CommandStatus::Failure), "\x1b[31m");
         assert_eq!(format!("{}", CommandStatus::Normal), "\x1b[0m");
+    }
+
+    #[test]
+    fn test_command_repository_from_vec() {
+        let commands = vec!["echo Command 1", "echo Command 2"];
+        let repo: CommandRepository = commands.into();
+        assert_eq!(repo.commands.len(), 2);
+        assert_eq!(repo.commands[0].command(), "echo Command 1");
+        assert_eq!(repo.commands[1].command(), "echo Command 2");
     }
 }
