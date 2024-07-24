@@ -32,6 +32,38 @@ pub enum CommandStatus {
     Normal,
 }
 
+impl CommandStatus {
+    pub fn print_message(&self, message: &str) {
+        match self {
+            CommandStatus::Running => println!(
+                "{}==> ⏳Running: {}{}",
+                CommandStatus::Running,
+                message,
+                CommandStatus::Normal
+            ),
+            CommandStatus::Success => println!(
+                "{}==> ✅Succeeded: {}{}",
+                CommandStatus::Success,
+                message,
+                CommandStatus::Normal
+            ),
+            CommandStatus::Warning => println!(
+                "{}==> ⚠️Warning: {}{}",
+                CommandStatus::Warning,
+                message,
+                CommandStatus::Normal
+            ),
+            CommandStatus::Failure => eprintln!(
+                "{}==> ❌Failed: {}{}",
+                CommandStatus::Failure,
+                message,
+                CommandStatus::Normal
+            ),
+            CommandStatus::Normal => println!("{}", message),
+        }
+    }
+}
+
 impl Display for CommandStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -129,25 +161,14 @@ impl CommandStruct {
 }
 impl CommandRunner for CommandStruct {
     fn run(&self) {
-        println!(
-            "{}==> Running: {}...{}",
-            CommandStatus::Running,
-            self.command,
-            CommandStatus::Normal
-        );
+        CommandStatus::Running.print_message(&self.command);
         match self.execute_command() {
-            Ok(_) => println!(
-                "{}==> Succeeded: {}{}",
-                CommandStatus::Success,
-                self.command,
-                CommandStatus::Normal
-            ),
-            Err(_) => eprintln!(
-                "{}==> Failed: {}{}",
-                CommandStatus::Failure,
-                self.command,
-                CommandStatus::Normal
-            ),
+            Ok(_) => {
+                CommandStatus::Success.print_message(&self.command);
+            }
+            Err(_) => {
+                CommandStatus::Failure.print_message(&self.command);
+            }
         }
     }
 }
