@@ -158,6 +158,10 @@ impl CommandStruct {
     pub fn command(&self) -> &str {
         &self.command
     }
+
+    pub fn set_command(&mut self, command: &str) {
+        self.command = command.to_string();
+    }
 }
 impl CommandRunner for CommandStruct {
     fn run(&self) {
