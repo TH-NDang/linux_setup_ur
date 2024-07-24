@@ -195,12 +195,22 @@ impl CommandStruct {
             .spawn()
             .expect("Failed to execute command");
 
-        let status = output.wait().expect("Failed to wait on child");
+        let status = match output.wait() {
+            Ok(status) => status,
+            Err(err) => {
+                eprintln!("Failed to wait on child: {}", err);
+                CommandStatus::Failure.print_message(&self.command);
+                return;
+            }
+        };
 
-        if status.success() {
-            CommandStatus::Success.print_message(&self.command);
-        } else {
-            CommandStatus::Failure.print_message(&self.command);
+        match status.code() {
+            Some(0) => CommandStatus::Success.print_message(&self.command),
+            Some(_) => CommandStatus::Failure.print_message(&self.command),
+            None => {
+                eprintln!("Command terminated by signal");
+                CommandStatus::Failure.print_message(&self.command);
+            }
         }
     }
 
