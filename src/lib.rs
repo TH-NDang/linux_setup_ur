@@ -4,6 +4,46 @@ use std::io;
 use std::path::Path;
 use std::process;
 
+enum Color {
+    Yellow,
+    Green,
+    Red,
+    Blue,
+    None,
+}
+
+impl Display for Color {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Color::Yellow => write!(f, "\x1b[33m"),
+            Color::Green => write!(f, "\x1b[32m"),
+            Color::Red => write!(f, "\x1b[31m"),
+            Color::Blue => write!(f, "\x1b[34m"),
+            Color::None => write!(f, "\x1b[0m"),
+        }
+    }
+}
+
+pub enum CommandStatus {
+    Running,
+    Success,
+    Warning,
+    Failure,
+    Normal,
+}
+
+impl Display for CommandStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            CommandStatus::Running => write!(f, "{}", Color::Blue),
+            CommandStatus::Success => write!(f, "{}", Color::Green),
+            CommandStatus::Warning => write!(f, "{}", Color::Yellow),
+            CommandStatus::Failure => write!(f, "{}", Color::Red),
+            CommandStatus::Normal => write!(f, "{}", Color::None),
+        }
+    }
+}
+
 pub enum DistributionType {
     Ubuntu,
     ArchLinux,
@@ -89,9 +129,25 @@ impl CommandStruct {
 }
 impl CommandRunner for CommandStruct {
     fn run(&self) {
+        println!(
+            "{}==> Running: {}...{}",
+            CommandStatus::Running,
+            self.command,
+            CommandStatus::Normal
+        );
         match self.execute_command() {
-            Ok(_) => println!("==> Succeeded: {}", self.command),
-            Err(_) => eprintln!("==> Failed: {}", self.command),
+            Ok(_) => println!(
+                "{}==> Succeeded: {}{}",
+                CommandStatus::Success,
+                self.command,
+                CommandStatus::Normal
+            ),
+            Err(_) => eprintln!(
+                "{}==> Failed: {}{}",
+                CommandStatus::Failure,
+                self.command,
+                CommandStatus::Normal
+            ),
         }
     }
 }
@@ -227,5 +283,23 @@ mod tests {
         let command = CommandFactory::new("echo Test");
         repo.add_command(command);
         assert_eq!(repo.commands.len(), 1);
+    }
+
+    #[test]
+    fn test_display_color() {
+        assert_eq!(format!("{}", Color::Yellow), "\x1b[33m");
+        assert_eq!(format!("{}", Color::Green), "\x1b[32m");
+        assert_eq!(format!("{}", Color::Red), "\x1b[31m");
+        assert_eq!(format!("{}", Color::Blue), "\x1b[34m");
+        assert_eq!(format!("{}", Color::None), "\x1b[0m");
+    }
+
+    #[test]
+    fn test_display_command_status() {
+        assert_eq!(format!("{}", CommandStatus::Running), "\x1b[34m");
+        assert_eq!(format!("{}", CommandStatus::Success), "\x1b[32m");
+        assert_eq!(format!("{}", CommandStatus::Warning), "\x1b[33m");
+        assert_eq!(format!("{}", CommandStatus::Failure), "\x1b[31m");
+        assert_eq!(format!("{}", CommandStatus::Normal), "\x1b[0m");
     }
 }
