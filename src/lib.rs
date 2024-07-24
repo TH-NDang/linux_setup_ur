@@ -155,6 +155,22 @@ impl CommandStruct {
         }
     }
 
+    pub fn interact_mode(&self) {
+        let mut output = process::Command::new("sh")
+            .arg("-c")
+            .arg(&self.command)
+            .spawn()
+            .expect("Failed to execute command");
+
+        let status = output.wait().expect("Failed to wait on child");
+
+        if status.success() {
+            CommandStatus::Success.print_message(&self.command);
+        } else {
+            CommandStatus::Failure.print_message(&self.command);
+        }
+    }
+
     pub fn command(&self) -> &str {
         &self.command
     }
