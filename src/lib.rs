@@ -4,6 +4,7 @@ use std::io;
 use std::path::Path;
 use std::process;
 
+/// Implements the `Display` trait for the Color enum, allowing custom formatting of Color values.
 enum Color {
     Yellow,
     Green,
@@ -24,6 +25,8 @@ impl Display for Color {
     }
 }
 
+/// Defines an enum representing different statuses of a command execution.
+/// Implements `print_message(message: &str)` methods to print messages based on the command status.
 pub enum CommandStatus {
     Running,
     Success,
@@ -115,13 +118,33 @@ impl Display for DistributionType {
     }
 }
 
+/// Checks if a file exists at the specified path.
+///
+/// ### Arguments
+///
+/// * `path` - A string slice that holds the path to the file.
+///
+/// ### Returns
+///
+/// A boolean value indicating whether the file exists or not.
 fn file_exists(path: &str) -> bool {
     Path::new(path).exists()
 }
+
+/// Reads the content of a file specified by the given path.
+///
+/// # Arguments
+///
+/// * `path` - A string slice that holds the path to the file.
+///
+/// # Returns
+///
+/// A `Result` containing a `String` with the content of the file if successful, or an `std::io::Error` if an error occurs.
 fn read_file_content(path: &str) -> Result<String, std::io::Error> {
     fs::read_to_string(path)
 }
 
+/// Identifies the Linux distribution by calling the `check` method of `DistributionType`.
 pub fn identify_linux_distribution() -> DistributionType {
     DistributionType::check()
 }
@@ -134,6 +157,16 @@ pub struct CommandStruct {
     command: String,
 }
 impl CommandStruct {
+    /// Executes the command stored in the `CommandStruct` instance and returns the output as a `Result`
+    ///
+    /// ### Success
+    ///
+    /// Returns a `String` containing the output of the command if the command execution is successful.
+    ///
+    /// ### Errors
+    ///
+    /// Returns an `io::Error` if the command execution fails or if the command is not found.
+    ///
     fn execute_command(&self) -> Result<String, io::Error> {
         let output = process::Command::new("sh")
             .arg("-c")
