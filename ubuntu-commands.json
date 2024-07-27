@@ -1,0 +1,239 @@
+{
+  "entries": [
+    {
+      "check": null,
+      "commands": [{ "command": "sudo apt update -y" }],
+      "configs": null
+    },
+    {
+      "check": null,
+      "commands": [{ "command": "sudo apt install -y curl" }],
+      "configs": null
+    },
+    {
+      "check": null,
+      "commands": [{ "command": "sudo apt install -y wget" }],
+      "configs": null
+    },
+    {
+      "commands": [{ "command": "sudo apt install -y git" }],
+      "configs": [
+        {
+          "check": null,
+          "command": { "command": "git config --global user.name [[name]]" }
+        },
+        {
+          "check": null,
+          "command": { "command": "git config --global user.email [[email]]" }
+        },
+        {
+          "check": null,
+          "command": {
+            "command": "git config --global core.editor code-insiders --wait"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "git config --global init.defaultBranch main" }
+        },
+        {
+          "check": null,
+          "command": { "command": "git config --global pull.rebase true" }
+        },
+        {
+          "check": null,
+          "command": { "command": "sudo apt install gh -y" }
+        },
+        {
+          "check": null,
+          "command": {
+            "command": "echo -> !TODO: Sign in to GitHub CLI with 'gh auth login'"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "gh auth login" }
+        }
+      ]
+    },
+    {
+      "check": "code-insiders --version",
+      "commands": [
+        {
+          "command": "wget 'https://code.visualstudio.com/sha/download?build=insider&os=linux-deb-x64 -O ~/Downloads/vscode-insiders.deb'"
+        },
+        { "command": "sudo dpkg -i ~/Downloads/vscode-insiders.deb" }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": { "command": "echo -> !TODO: Sign in to VS Code Insiders" }
+        }
+      ]
+    },
+    {
+      "check": "microsoft-edge-beta --version",
+      "commands": [
+        {
+          "command": "curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg"
+        },
+        {
+          "command": "sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/"
+        },
+        {
+          "command": "sudo sh -c 'echo \"deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main\" > /etc/apt/sources.list.d/microsoft-edge-dev.list'"
+        },
+        { "command": "sudo rm microsoft.gpg" },
+        { "command": "sudo apt update -y" },
+        { "command": "sudo apt install microsoft-edge-beta -y" }
+      ],
+      "configs": [
+        {
+          "command": {
+            "command": "echo -> !TODO: Sign in to Microsoft Edge Beta"
+          }
+        }
+      ]
+    },
+    {
+      "check": null,
+      "commands": [{ "command": "sudo apt install -y gnome-tweaks" }],
+      "configs": null
+    },
+    {
+      "check": "if [ dpkg -l | grep -q 'ibus' ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "if [ ! -q '^deb .*ppa:bamboo-engine/ibus-bamboo' /etc/apt/sources.list/* ]; then sudo add-apt-repository ppa:bamboo-engine/ibus-bamboo -y; fi"
+        },
+        { "command": "sudo apt update -y" },
+        { "command": "sudo apt install -y ibus ibus-bamboo" },
+        { "command": "ibus restart" },
+        {
+          "command": "env DCONF_PROFILE=ibus dconf write /desktop/ibus/general/preload-engines \"['BambooUs', 'Bamboo']\""
+        },
+        {
+          "command": "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'us'), ('ibus', 'BambooUs')]\""
+        }
+      ],
+      "configs": null
+    },
+    {
+      "check": "if [ fc-list | grep -qi 'Hack' ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "wget 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Hack.zip' -O ~/Downloads/Hack.zip"
+        },
+        {
+          "command": "sudo unzip -o ~/Downloads/Hack.zip -d /usr/share/fonts/Hack"
+        },
+        { "command": "sudo fc-cache -f -v" }
+      ],
+      "configs": null
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "command": "sh -c '$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)'"
+        }
+      ],
+      "configs": [
+        {
+          "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions ]; then echo 'true'; fi",
+          "command": {
+            "command": "git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+          }
+        },
+        {
+          "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting ]; then echo 'true'; fi",
+          "command": {
+            "command": "git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "command": "sed -i '/^plugins=(.*)$/s//plugins=(zsh-autosuggestions zsh-syntax-highlighting git docker)/' ~/.zshrc"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "source ~/.zshrc" }
+        }
+      ]
+    },
+    {
+      "commands": [{ "command": "sudo apt install -y btop tmux eza" }],
+      "configs": [
+        {
+          "check": "grep -q 'alias el=' ~/.bashrc",
+          "command": {
+            "command": "sed -i '/# Example aliases/a\n# Add alias for eza\nalias el=\"eza --long --icons=auto --color=auto --group-directories-first --sort=type --hyperlink\"\nalias et=\"eza --tree --icons=auto --level=2 --long --color=auto --group-directories-first --sort=type --hyperlink\"\nalias eta=\"eza --tree --icons=auto --level=2 --long --color=auto --group-directories-first --all --sort=type --hyperlink\"\nalias ea=\"eza --long --icons=auto --color=auto --group-directories-first --all --sort=type --hyperlink\"' ~/.zshrc"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "source ~/.zshrc" }
+        }
+      ]
+    },
+    {
+      "check": "if [ dpkg -l | grep -q 'warp-terminal' ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "wget https://app.warp.dev/download?package=deb -O ~/Downloads/warp.deb"
+        },
+        { "command": "sudo dpkg -i ~/Downloads/warp.deb" }
+      ],
+      "configs": null
+    },
+    {
+      "check": "if [ -d '.workspace' ]; then echo 'true'; fi",
+      "commands": [{ "command": "gh repo clone [[workspace-repo]]" }],
+      "configs": null
+    },
+    {
+      "check": "if [ dpkg -l | grep -q docker-ce ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "sudo apt install ca-certificates curl apt-transport-https -y"
+        },
+        {
+          "command": "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg"
+        },
+        {
+          "command": "echo \n\"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \n$(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | \nsudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+        },
+        { "command": "sudo apt update -y" },
+        {
+          "command": "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+        }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": { "command": "sudo groupadd docker" }
+        },
+        {
+          "check": null,
+          "command": { "command": "sudo usermod -aG docker $USER" }
+        },
+        {
+          "check": null,
+          "command": { "command": "newgrp docker" }
+        }
+      ]
+    },
+    {
+      "check": null,
+      "commands": [
+        { "command": "echo 'Setting successful!'" },
+        {
+          "command": "echo 'Please restart your computer to apply all changes!'"
+        }
+      ],
+      "configs": null
+    }
+  ]
+}
