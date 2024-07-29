@@ -75,11 +75,22 @@ impl CommandStruct {
     }
 
     pub fn check_command_success(command: &str, check: impl Fn(process::Output) -> bool) -> bool {
-        let output = process::Command::new("sh").arg("-c").arg(command).output();
+        Status::Running.print_message(&format!("==> Checking command: {}", command));
 
-        match output {
-            Ok(output) => output.status.success() && check(output),
-            Err(_) => false,
+        let output = match process::Command::new("sh").arg("-c").arg(command).output() {
+            Ok(output) => output,
+            Err(_) => {
+                Status::Failure.print_message(&format!("Command failed: {}", command));
+                return false;
+            }
+        };
+
+        if output.status.success() && check(output) {
+            Status::Success.print_message(&format!("\t--> Checked is true: {}", command));
+            true
+        } else {
+            Status::Failure.print_message(&format!("\t--> Checked is false: {}", command));
+            false
         }
     }
 }
