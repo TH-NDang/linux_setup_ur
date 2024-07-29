@@ -57,7 +57,7 @@ impl SetupEntry {
             });
         }
 
-        true
+        false
     }
 
     fn settings(&self) -> Status {
