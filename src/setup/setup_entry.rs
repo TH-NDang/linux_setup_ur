@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::Status, CommandFactory, CommandRunner, CommandStruct, ConfigItem};
 use crate::Configurator;
+use crate::{utils::Status, CommandFactory, CommandRunner, CommandStruct, ConfigItem};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SetupEntry {
@@ -50,28 +50,6 @@ impl SetupEntry {
         self.check = Some(check.to_string());
     }
 
-    fn check(&self) -> bool {
-        if let Some(check_command) = &self.check {
-            return CommandStruct::check_command_success(&check_command, |output| {
-                !String::from_utf8_lossy(&output.stdout).is_empty()
-            });
-        }
-
-        false
-    }
-
-    fn settings(&self) -> Status {
-        if let Status::Success = self.run_commands() {
-            if let Some(_) = &self.configs {
-                println!("==> Running commands [config]");
-                return self.run_configs();
-            }
-            Status::Success
-        } else {
-            Status::Failure
-        }
-    }
-
     fn run_commands(&self) -> Status {
         let failed = self
             .commands
@@ -100,7 +78,7 @@ impl SetupEntry {
 
         Status::Success
     }
-    
+
     pub fn commands(&self) -> &[CommandStruct] {
         &self.commands
     }
@@ -108,14 +86,29 @@ impl SetupEntry {
 
 impl CommandRunner for SetupEntry {
     fn run(&self) -> Status {
-        let check = self.check();
+        let mut process = Status::Running;
 
-        if !check {
-            return self.settings();
+        if let Some(check) = &self.check {
+            if let Ok(result) = CommandStruct::validate_command(&check, |output| {
+                !String::from_utf8_lossy(&output.stdout).is_empty()
+            }) {
+                if result {
+                    process = Status::Success;
+                }
+            }
         }
 
-        // !TODO: Add a message to indicate that the commands are being skipped
-        // println!("==> Skipping commands");
-        Status::Success
+        if process != Status::Success {
+            process = self.run_commands();
+        } else {
+            println!("==> Commands: {:?} [skipped]", self.commands());
+        }
+
+        if self.configs.is_some() && process != Status::Failure {
+            println!("==> Running commands [config]");
+            process = self.run_configs();
+        }
+
+        process
     }
 }

@@ -1,4 +1,4 @@
-use std::{io, process};
+use std::{error, io, process};
 
 use serde::{Deserialize, Serialize};
 
@@ -40,7 +40,7 @@ impl CommandStruct {
         }
     }
 
-    pub fn interact_mode(&self) {
+    pub fn interact_mode(&self) -> Status {
         let mut output = process::Command::new("sh")
             .arg("-c")
             .arg(&self.command)
@@ -52,16 +52,23 @@ impl CommandStruct {
             Err(err) => {
                 eprintln!("Failed to wait on child: {}", err);
                 Status::Failure.print_message(&self.command);
-                return;
+                return Status::Failure;
             }
         };
 
         match status.code() {
-            Some(0) => Status::Success.print_message(&self.command),
-            Some(_) => Status::Failure.print_message(&self.command),
+            Some(0) => {
+                Status::Success.print_message(&self.command);
+                Status::Success
+            }
+            Some(_) => {
+                Status::Failure.print_message(&self.command);
+                Status::Failure
+            }
             None => {
                 eprintln!("Command terminated by signal");
                 Status::Failure.print_message(&self.command);
+                Status::Failure
             }
         }
     }
@@ -74,23 +81,26 @@ impl CommandStruct {
         self.command = command.to_string();
     }
 
-    pub fn check_command_success(command: &str, check: impl Fn(process::Output) -> bool) -> bool {
+    pub fn validate_command(
+        command: &str,
+        check: impl Fn(process::Output) -> bool,
+    ) -> Result<bool, Box<dyn error::Error>> {
         Status::Running.print_message(&format!("==> Checking command: {}", command));
 
         let output = match process::Command::new("sh").arg("-c").arg(command).output() {
             Ok(output) => output,
-            Err(_) => {
+            Err(e) => {
                 Status::Failure.print_message(&format!("Command failed: {}", command));
-                return false;
+                return Err(Box::new(e));
             }
         };
 
         if output.status.success() && check(output) {
             Status::Success.print_message(&format!("\t--> Checked is true: {}", command));
-            true
+            Ok(true)
         } else {
             Status::Failure.print_message(&format!("\t--> Checked is false: {}", command));
-            false
+            Ok(false)
         }
     }
 }

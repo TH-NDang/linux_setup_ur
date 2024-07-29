@@ -11,15 +11,22 @@ pub struct ConfigItem {
 impl Configurator for ConfigItem {
     fn apply(&self) -> Status {
         if let Some(check) = &self.check {
-            if CommandStruct::check_command_success(check, |output| {
+            match CommandStruct::validate_command(check, |output| {
                 !String::from_utf8_lossy(&output.stdout).is_empty()
             }) {
-                return Status::Success;
+                Ok(result) => {
+                    if result {
+                        return Status::Success;
+                    }
+                }
+                Err(e) => {
+                    Status::Failure.print_message(&format!("Error validating check: {}", e));
+                    return Status::Failure;
+                }
             }
         }
 
-        self.command.interact_mode();
-        Status::Normal
+        self.command.interact_mode()
     }
 
     fn revert(&self) -> Status {
