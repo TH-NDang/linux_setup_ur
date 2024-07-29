@@ -62,8 +62,11 @@ impl SetupEntry {
 
     fn settings(&self) -> Status {
         if let Status::Success = self.run_commands() {
-            println!("==> Running commands [config]");
-            self.run_configs()
+            if let Some(_) = &self.configs {
+                println!("==> Running commands [config]");
+                return self.run_configs();
+            }
+            Status::Success
         } else {
             Status::Failure
         }
@@ -111,6 +114,8 @@ impl CommandRunner for SetupEntry {
             return self.settings();
         }
 
+        // !TODO: Add a message to indicate that the commands are being skipped
+        // println!("==> Skipping commands");
         Status::Success
     }
 }
