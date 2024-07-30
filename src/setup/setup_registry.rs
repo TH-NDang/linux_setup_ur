@@ -3,8 +3,8 @@ use std::fs::File;
 use std::io;
 
 use crate::setup::SetupEntry;
+use crate::traits::executable_setup::ExecutableSetup;
 use crate::Repository;
-use crate::CommandRunner;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SetupRegistry {
@@ -19,9 +19,8 @@ impl SetupRegistry {
     }
 
     pub fn execute(&mut self) {
-        for entry in self.entries.iter() {
-            println!("==> Running commands {:?}", entry.commands());
-            entry.run();
+        for entry in self.entries.iter_mut() {
+            entry.setup();
         }
     }
 }

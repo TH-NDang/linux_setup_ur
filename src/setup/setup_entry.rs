@@ -1,55 +1,66 @@
+use std::io::Write;
+use std::path::PathBuf;
+use std::{fs, io};
+
 use serde::{Deserialize, Serialize};
 
+use crate::traits::executable_setup::ExecutableSetup;
 use crate::Configurator;
-use crate::{utils::Status, CommandFactory, CommandRunner, CommandStruct, ConfigItem};
+use crate::{utils::Status, CommandRunner, CommandStruct, ConfigItem};
+
+#[derive(Serialize, Deserialize, Debug)]
+struct SetupItem {
+    env_vars: Option<Vec<String>>,
+    working_dir: Option<PathBuf>,
+}
+
+impl SetupItem {
+    fn ensure_working_dir(&self) -> io::Result<()> {
+        if let Some(dir) = &self.working_dir {
+            if !dir.exists() {
+                fs::create_dir_all(dir)?;
+                println!("Created directory: {:?}", dir);
+            }
+        }
+        Ok(())
+    }
+
+    fn ensure_env_vars(&mut self) -> io::Result<()> {
+        if let Some(vars) = &mut self.env_vars {
+            for env_var in vars.iter() {
+                if std::env::var(env_var).is_err() {
+                    println!("Environment variable `{}` not set.", env_var);
+                    let mut input = String::new();
+                    print!("Enter value for `{}`: ", env_var);
+                    io::stdout().flush()?;
+                    io::stdin().read_line(&mut input)?;
+                    let input = input.trim().to_string();
+
+                    print!("You entered: {}. Is this correct? (y/n): ", input);
+                    io::stdout().flush()?;
+                    let mut confirm = String::new();
+                    io::stdin().read_line(&mut confirm)?;
+                    if confirm.trim().to_lowercase() == "y" {
+                        println!("Environment variable {} set to: {}", env_var, input);
+                        std::env::set_var(env_var, input);
+                    } else {
+                        println!("Skipping setting environment variable {}.", env_var);
+                    }
+                }
+            }
+        }
+        Ok(())
+    }
+}
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SetupEntry {
     check: Option<String>,
     commands: Vec<CommandStruct>,
     configs: Option<Vec<ConfigItem>>,
+    setup: Option<SetupItem>,
 }
-
-impl From<(Option<&str>, Vec<&str>, Option<Vec<&str>>)> for SetupEntry {
-    fn from(value: (Option<&str>, Vec<&str>, Option<Vec<&str>>)) -> Self {
-        let mut setup = SetupEntry::new();
-
-        if let Some(check) = value.0 {
-            setup.set_check(check);
-        }
-
-        for command in value.1 {
-            setup.commands.push(CommandFactory::new(command));
-        }
-        let mut configs = Vec::new();
-
-        if let Some(configs_list) = value.2 {
-            for config in configs_list {
-                configs.push(ConfigItem {
-                    check: None,
-                    command: CommandFactory::new(config),
-                });
-            }
-        }
-
-        setup.configs = Some(configs);
-        setup
-    }
-}
-
 impl SetupEntry {
-    pub fn new() -> Self {
-        SetupEntry {
-            check: None,
-            commands: Vec::new(),
-            configs: None,
-        }
-    }
-
-    pub fn set_check(&mut self, check: &str) {
-        self.check = Some(check.to_string());
-    }
-
     fn run_commands(&self) -> Status {
         let failed = self
             .commands
@@ -78,10 +89,6 @@ impl SetupEntry {
 
         Status::Success
     }
-
-    pub fn commands(&self) -> &[CommandStruct] {
-        &self.commands
-    }
 }
 
 impl CommandRunner for SetupEntry {
@@ -99,9 +106,10 @@ impl CommandRunner for SetupEntry {
         }
 
         if process != Status::Success {
+            println!("==> Running commands: {:?}", self.commands);
             process = self.run_commands();
         } else {
-            println!("==> Commands: {:?} [skipped]", self.commands());
+            println!("==> Commands: {:?} [skipped]", self.commands);
         }
 
         if self.configs.is_some() && process != Status::Failure {
@@ -110,5 +118,23 @@ impl CommandRunner for SetupEntry {
         }
 
         process
+    }
+}
+
+impl ExecutableSetup for SetupEntry {
+    fn setup(&mut self) -> Status {
+        if let Some(setup) = &mut self.setup {
+            if let Err(e) = setup.ensure_working_dir() {
+                eprintln!("Error creating working directory: {}", e);
+                return Status::Failure;
+            }
+
+            if let Err(e) = setup.ensure_env_vars() {
+                eprintln!("Error setting environment variables: {}", e);
+                return Status::Failure;
+            }
+        }
+
+        self.run()
     }
 }
