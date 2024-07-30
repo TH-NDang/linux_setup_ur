@@ -11,16 +11,6 @@ pub struct CommandStruct {
     pub shell: Option<Shell>,
 }
 impl CommandStruct {
-    /// Executes the command stored in the `CommandStruct` instance and returns the output as a `Result`
-    ///
-    /// ### Success
-    ///
-    /// Returns a `String` containing the output of the command if the command execution is successful.
-    ///
-    /// ### Errors
-    ///
-    /// Returns an `io::Error` if the command execution fails or if the command is not found.
-    ///
     fn execute_command(&self) -> Result<String, io::Error> {
         let output = process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
             .arg("-c")
