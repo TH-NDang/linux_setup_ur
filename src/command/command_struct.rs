@@ -2,11 +2,13 @@ use std::{error, io, process};
 
 use serde::{Deserialize, Serialize};
 
+use super::shell::Shell;
 use crate::{utils::Status, CommandRunner};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommandStruct {
     pub command: String,
+    pub shell: Option<Shell>,
 }
 impl CommandStruct {
     /// Executes the command stored in the `CommandStruct` instance and returns the output as a `Result`
@@ -20,7 +22,7 @@ impl CommandStruct {
     /// Returns an `io::Error` if the command execution fails or if the command is not found.
     ///
     fn execute_command(&self) -> Result<String, io::Error> {
-        let output = process::Command::new("sh")
+        let output = process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
             .arg("-c")
             .arg(&self.command)
             .output()?;
@@ -41,7 +43,8 @@ impl CommandStruct {
     }
 
     pub fn interact_mode(&self) -> Status {
-        let mut output = process::Command::new("sh")
+        let mut output =
+            process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
             .arg("-c")
             .arg(&self.command)
             .spawn()
@@ -128,6 +131,7 @@ mod tests {
     fn test_execute_command() {
         let command_success = CommandStruct {
             command: "echo Hello, world!".to_string(),
+            shell: None,
         };
         let result = command_success.execute_command();
         assert!(result.is_ok());
@@ -135,6 +139,7 @@ mod tests {
 
         let command_failure = CommandStruct {
             command: "nonexistentcommand".to_string(),
+            shell: None,
         };
         let result = command_failure.execute_command();
         assert!(result.is_err());
@@ -145,6 +150,7 @@ mod tests {
     fn test_run_command() {
         let command = CommandStruct {
             command: "echo Hello, world!".to_string(),
+            shell: None,
         };
         command.run();
     }
@@ -153,6 +159,7 @@ mod tests {
     fn test_command_struct_command() {
         let command = CommandStruct {
             command: "ls".to_string(),
+            shell: None,
         };
         assert_eq!(command.command(), "ls");
     }
