@@ -45,10 +45,10 @@ impl CommandStruct {
     pub fn interact_mode(&self) -> Status {
         let mut output =
             process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
-            .arg("-c")
-            .arg(&self.command)
-            .spawn()
-            .expect("Failed to execute command");
+                .arg("-c")
+                .arg(&self.command)
+                .spawn()
+                .expect("Failed to execute command");
 
         let status = match output.wait() {
             Ok(status) => status,
