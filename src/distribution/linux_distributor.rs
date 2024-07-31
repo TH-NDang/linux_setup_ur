@@ -1,7 +1,8 @@
-use std::fmt::Display;
+use std::{fmt::Display, fs, path::PathBuf};
 
-use crate::utils::file_operations::{file_exists, read_file_content};
+use serde::{Deserialize, Serialize};
 
+#[derive(Deserialize, Serialize, Debug, PartialEq, Eq)]
 pub enum DistributionType {
     Ubuntu,
     ArchLinux,
@@ -14,22 +15,21 @@ pub trait LinuxDistributor {
 
 impl LinuxDistributor for DistributionType {
     fn check() -> Self {
-        if file_exists("/etc/arch-release") {
-            DistributionType::ArchLinux
-        } else if file_exists("/etc/lsb-release") {
-            match read_file_content("/etc/lsb-release") {
-                Ok(content) => {
-                    if content.contains("DISTRIB_ID=Ubuntu") {
-                        DistributionType::Ubuntu
-                    } else {
-                        DistributionType::Unknown
-                    }
-                }
-                Err(_) => DistributionType::Unknown,
-            }
-        } else {
-            DistributionType::Unknown
+        let arch_path: PathBuf = PathBuf::from("/etc/arch-release");
+        let lsb_path: PathBuf = PathBuf::from("/etc/lsb-release");
+
+        if arch_path.exists() {
+            return DistributionType::ArchLinux;
         }
+
+        if lsb_path.exists() {
+            let content = fs::read_to_string(lsb_path).unwrap();
+            if content.contains("Ubuntu") {
+                return DistributionType::Ubuntu;
+            }
+        };
+
+        DistributionType::Unknown
     }
 }
 
