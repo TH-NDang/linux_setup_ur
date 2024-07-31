@@ -4,8 +4,8 @@ use crate::{utils::Status, CommandStruct, Configurator};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ConfigItem {
-    pub check: Option<String>,
-    pub command: CommandStruct,
+    check: Option<String>,
+    command: CommandStruct,
 }
 
 impl Configurator for ConfigItem {
