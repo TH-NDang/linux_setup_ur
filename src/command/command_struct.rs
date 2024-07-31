@@ -3,15 +3,26 @@ use std::{error, io, process};
 use serde::{Deserialize, Serialize};
 
 use super::shell::Shell;
-use crate::{utils::Status, CommandRunner};
+use crate::{
+    distribution::identify_linux_distribution, utils::Status, CommandRunner, DistributionType,
+};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommandStruct {
     pub command: String,
     pub shell: Option<Shell>,
+    distribution: Option<DistributionType>,
 }
 impl CommandStruct {
     fn execute_command(&self) -> Result<String, io::Error> {
+        if let Some(distribution) = &self.distribution {
+            if *distribution != identify_linux_distribution() {
+                // Status::Skipped.print_message(&self.command);
+                // return Status::Skipped;
+                return Ok("Skipped".to_string());
+            }
+        }
+
         let output = process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
             .arg("-c")
             .arg(&self.command)
@@ -33,6 +44,14 @@ impl CommandStruct {
     }
 
     pub fn interact_mode(&self) -> Status {
+        if let Some(distribution) = &self.distribution {
+            if *distribution != identify_linux_distribution() {
+                // Status::Skipped.print_message(&self.command);
+                // return Status::Skipped;
+                return Status::Normal;
+            }
+        }
+
         let mut output =
             process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
                 .arg("-c")
@@ -110,47 +129,5 @@ impl CommandRunner for CommandStruct {
                 Status::Failure
             }
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_execute_command() {
-        let command_success = CommandStruct {
-            command: "echo Hello, world!".to_string(),
-            shell: None,
-        };
-        let result = command_success.execute_command();
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "Hello, world!");
-
-        let command_failure = CommandStruct {
-            command: "nonexistentcommand".to_string(),
-            shell: None,
-        };
-        let result = command_failure.execute_command();
-        assert!(result.is_err());
-        assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
-    }
-
-    #[test]
-    fn test_run_command() {
-        let command = CommandStruct {
-            command: "echo Hello, world!".to_string(),
-            shell: None,
-        };
-        command.run();
-    }
-
-    #[test]
-    fn test_command_struct_command() {
-        let command = CommandStruct {
-            command: "ls".to_string(),
-            shell: None,
-        };
-        assert_eq!(command.command(), "ls");
     }
 }

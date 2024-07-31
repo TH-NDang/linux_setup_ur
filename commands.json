@@ -1,0 +1,377 @@
+{
+  "entries": [
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -Syu --noconfirm"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt update && sudo apt upgrade -y"
+        }
+      ],
+      "configs": null
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -S --noconfirm curl"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y curl"
+        }
+      ],
+      "configs": null
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -S --noconfirm wget"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y wget"
+        }
+      ],
+      "configs": null
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -S --noconfirm zsh"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y zsh"
+        }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": {
+            "command": "echo \"chsh -s $(which zsh)\""
+          }
+        }
+      ]
+    },
+    {
+      "check": "if [ -d ~/.workspace ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "mkdir -p ~/.workspace"
+        }
+      ],
+      "configs": null
+    },
+    {
+      "check": "if [ -d ~/.oh-my-zsh ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
+        }
+      ],
+      "configs": [
+        {
+          "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions ]; then echo 'true'; fi",
+          "command": {
+            "command": "git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
+          }
+        },
+        {
+          "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting ]; then echo 'true'; fi",
+          "command": {
+            "command": "git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "command": "sed -i '/^plugins=(.*)$/s//plugins=(zsh-autosuggestions zsh-syntax-highlighting git docker)/' ~/.zshrc"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "source ~/.zshrc", "shell": "Zsh" }
+        }
+      ]
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -S --noconfirm git"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y git"
+        }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": {
+            "working_dir": "~",
+            "env_vars": ["GIT_USER_NAME"],
+            "command": "git config --global user.name $GIT_USER_NAME"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "working_der": "~",
+            "env_vars": ["GIT_USER_EMAIL"],
+            "command": "git config --global user.email $GIT_USER_EMAIL"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "command": "git config --global init.defaultBranch main"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "working_dir": "~",
+            "command": "git config --global core.editor code-insiders --wait"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "working_dir": "~",
+            "command": "git config --global pull.rebase true"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "distribution": "Ubuntu",
+            "command": "sudo apt install gh -y"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "distribution": "ArchLinux",
+            "command": "sudo pacman -S github-cli --noconfirm"
+          }
+        },
+        {
+          "check": null,
+          "command": {
+            "command": "echo -> !TODO: Sign in to GitHub CLI with 'gh auth login'"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "gh auth login" }
+        }
+      ],
+      "setup": {
+        "env_vars": ["GIT_USER_NAME", "GIT_USER_EMAIL"],
+        "working_der": "~"
+      }
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y btop eza"
+        },
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -S --noconfirm btop eza"
+        }
+      ],
+      "configs": [
+        {
+          "check": "if grep -q 'alias el=' ~/.zshrc; then echo 'true'; fi",
+          "command": {
+            "command": "sed -i '/# Example aliases/a# Add alias for eza\nalias el=\"eza --long --icons=auto --color=auto --group-directories-first --sort=type --hyperlink\"\nalias et=\"eza --tree --icons=auto --level=2 --long --color=auto --group-directories-first --sort=type --hyperlink\"\nalias eta=\"eza --tree --icons=auto --level=2 --long --color=auto --group-directories-first --all --sort=type --hyperlink\"\nalias ea=\"eza --long --icons=auto --color=auto --group-directories-first --all --sort=type --hyperlink\"' ~/.zshrc"
+          }
+        },
+        {
+          "check": null,
+          "command": { "command": "source ~/.zshrc" }
+        }
+      ]
+    },
+    {
+      "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "yay -S --noconfirm --overwrite microsoft-edge-beta-bin"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo sh -c 'echo \"deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main\" > /etc/apt/sources.list.d/microsoft-edge-beta.list'"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo rm microsoft.gpg"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt update -y"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install microsoft-edge-beta -y"
+        }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": {
+            "command": "echo -> !TODO: Sign in to Microsoft Edge Beta"
+          }
+        }
+      ]
+    },
+    {
+      "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "yay -S --noconfirm --overwrite visual-studio-code-insiders-bin"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "wget 'https://code.visualstudio.com/sha/download?build=insider&os=linux-deb-x64' -O ~/Downloads/vscode-insiders.deb"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo dpkg -i ~/Downloads/vscode-insiders.deb"
+        }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": {
+            "command": "echo -> !TODO: Sign in to Visual Studio Code Insiders"
+          }
+        }
+      ]
+    },
+    {
+      "check": null,
+      "commands": [
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y gnome-tweaks"
+        }
+      ]
+    },
+    {
+      "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
+      "commands": [
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo add-apt-repository ppa:bamboo-engine/ibus-bamboo -y"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt update -y"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y ibus ibus-bamboo"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "ibus restart"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "env DCONF_PROFILE=ibus dconf write /desktop/ibus/general/preload-engines \"['BambooUs', 'Bamboo']\""
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'us'), ('ibus', 'BambooUs')]\""
+        }
+      ],
+      "configs": null
+    },
+    {
+      "commands": [
+        {
+          "distribution": "Ubuntu",
+          "command": "wget 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Hack.zip' -O ~/Downloads/Hack.zip"
+        }
+      ],
+      "configs": [
+        {
+          "command": {
+            "distribution": "Ubuntu",
+            "command": "sudo unzip -o ~/Downloads/Hack.zip -d /usr/share/fonts/Hack"
+          }
+        },
+        {
+          "command": {
+            "distribution": "Ubuntu",
+            "command": "sudo fc-cache -f -v"
+          }
+        }
+      ]
+    },
+    {
+      "commands": [
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y ca-certificates curl apt-transport-https"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/trusted.gpg.d/docker.gpg"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "echo \n\"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \n$(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | \nsudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt update -y"
+        },
+        {
+          "distribution": "Ubuntu",
+          "command": "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+        }
+      ],
+      "configs": [
+        {
+          "check": null,
+          "command": { "command": "sudo groupadd docker" }
+        },
+        {
+          "check": null,
+          "command": { "command": "sudo usermod -aG docker $USER" }
+        },
+        {
+          "check": null,
+          "command": { "command": "newgrp docker" }
+        }
+      ]
+    }
+  ]
+}
