@@ -182,7 +182,8 @@ mod tests {
     #[test]
     fn test_validate_command_success() {
         let command = "echo Hello";
-        let check = |output: Output| -> bool { String::from_utf8_lossy(&output.stdout).contains("Hello") };
+        let check =
+            |output: Output| -> bool { String::from_utf8_lossy(&output.stdout).contains("Hello") };
 
         let result = CommandStruct::validate_command(command, check);
         assert!(result.is_ok());
@@ -225,13 +226,24 @@ mod tests {
 
     #[test]
     fn test_run_use_zsh() {
+        use std::fs;
+        use std::fs::File;
+        use std::io::Write;
+        use std::path::Path;
+
+        let zshrc_path = Path::new(".zshrc");
+        let mut file = File::create(&zshrc_path).expect("Unable to create .zshrc file");
+        writeln!(file, "echo 'Hello from .zshrc'").expect("Unable to write to .zshrc file");
+
         let command_struct = CommandStruct {
-            command: "source ~/.zshrc".to_string(),
+            command: format!("source {}", zshrc_path.display()),
             shell: Some(Shell::Zsh),
             distribution: None,
         };
 
         let status = command_struct.execute_command();
         assert!(status.is_ok());
+
+        fs::remove_file(zshrc_path).expect("Unable to delete .zshrc file");
     }
 }
