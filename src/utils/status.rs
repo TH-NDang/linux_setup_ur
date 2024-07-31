@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+use std::fmt;
 
 use crate::utils::Color;
 
@@ -16,44 +16,32 @@ pub enum Status {
 
 impl Status {
     pub fn print_message(&self, message: &str) {
+        use Status::*;
         match self {
-            Status::Running => println!(
-                "{}==> ⏳Running: {}{}",
-                Status::Running,
-                message,
-                Status::Normal
-            ),
-            Status::Success => println!(
-                "{}==> ✅Succeeded: {}{}",
-                Status::Success,
-                message,
-                Status::Normal
-            ),
-            Status::Warning => println!(
-                "{}==> ⚠️Warning: {}{}",
-                Status::Warning,
-                message,
-                Status::Normal
-            ),
-            Status::Failure => eprintln!(
-                "{}==> ❌Failed: {}{}",
-                Status::Failure,
-                message,
-                Status::Normal
-            ),
-            Status::Normal => println!("{}", message),
+            Running => println!("{}==> ⏳ Running: {}{}", self, message, Normal),
+            Success => println!("{}==> ✅ Success: {}{}", self, message, Normal),
+            Warning => println!("{}==> ⚠️ Warning: {}{}", self, message, Normal),
+            Failure => eprintln!("{}==> ❌ Failed: {}{}", self, message, Normal),
+            Normal => println!("{}", message),
         }
     }
 }
 
-impl Display for Status {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Status {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.to_color())
+    }
+}
+
+impl Status {
+    fn to_color(&self) -> Color {
+        use Status::*;
         match self {
-            Status::Running => write!(f, "{}", Color::Blue),
-            Status::Success => write!(f, "{}", Color::Green),
-            Status::Warning => write!(f, "{}", Color::Yellow),
-            Status::Failure => write!(f, "{}", Color::Red),
-            Status::Normal => write!(f, "{}", Color::None),
+            Running => Color::Blue,
+            Success => Color::Green,
+            Warning => Color::Yellow,
+            Failure => Color::Red,
+            Normal => Color::None,
         }
     }
 }
@@ -61,13 +49,23 @@ impl Display for Status {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use Status::*;
 
     #[test]
     fn test_display_status() {
-        assert_eq!(format!("{}", Status::Running), "\x1b[34m");
-        assert_eq!(format!("{}", Status::Success), "\x1b[32m");
-        assert_eq!(format!("{}", Status::Warning), "\x1b[33m");
-        assert_eq!(format!("{}", Status::Failure), "\x1b[31m");
-        assert_eq!(format!("{}", Status::Normal), "\x1b[0m");
+        assert_eq!(format!("{}", Running), "\x1b[34m");
+        assert_eq!(format!("{}", Success), "\x1b[32m");
+        assert_eq!(format!("{}", Warning), "\x1b[33m");
+        assert_eq!(format!("{}", Failure), "\x1b[31m");
+        assert_eq!(format!("{}", Normal), "\x1b[0m");
+    }
+
+    #[test]
+    fn test_print_message() {
+        Running.print_message("Test running");
+        Success.print_message("Test success");
+        Warning.print_message("Test warning");
+        Failure.print_message("Test failure");
+        Normal.print_message("Test normal");
     }
 }
