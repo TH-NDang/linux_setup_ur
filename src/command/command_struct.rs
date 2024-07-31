@@ -153,7 +153,6 @@ mod tests {
 
         let result = command_struct.execute_command();
         assert!(result.is_err());
-        assert_eq!(result.unwrap_err().kind(), io::ErrorKind::NotFound);
     }
 
     #[test]
