@@ -14,72 +14,83 @@ pub struct CommandStruct {
     distribution: Option<DistributionType>,
 }
 impl CommandStruct {
-    fn execute_command(&self) -> Result<String, io::Error> {
+    fn should_skip(&self) -> bool {
         if let Some(distribution) = &self.distribution {
             if *distribution != identify_linux_distribution() {
-                // Status::Skipped.print_message(&self.command);
-                // return Status::Skipped;
-                return Ok("Skipped".to_string());
+                return true;
             }
         }
+        false
+    }
 
-        let output = process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
+    fn run_command(&self) -> Result<process::Output, io::Error> {
+        process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
             .arg("-c")
             .arg(&self.command)
-            .output()?;
+            .output()
+    }
 
-        if output.status.success() {
-            Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    fn handle_command_error(&self, output: process::Output) -> Result<String, io::Error> {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        if stderr.contains("command not found") {
+            Err(io::Error::new(io::ErrorKind::NotFound, "Command not found"))
         } else {
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            if stderr.contains("command not found") {
-                Err(io::Error::new(io::ErrorKind::NotFound, "Command not found"))
-            } else {
-                Err(io::Error::new(
-                    io::ErrorKind::Other,
-                    "Command execution failed",
-                ))
+            Err(io::Error::new(
+                io::ErrorKind::Other,
+                "Command execution failed",
+            ))
+        }
+    }
+
+    fn spawn_command(&self) -> Result<process::Child, io::Error> {
+        process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
+            .arg("-c")
+            .arg(&self.command)
+            .spawn()
+    }
+
+    fn handle_status(&self, status: process::ExitStatus) -> Status {
+        match status.code() {
+            Some(0) => Status::Success,
+            Some(_) => Status::Failure,
+            None => {
+                eprintln!("Command terminated by signal");
+                Status::Failure
             }
         }
     }
 
-    pub fn interact_mode(&self) -> Status {
-        if let Some(distribution) = &self.distribution {
-            if *distribution != identify_linux_distribution() {
-                // Status::Skipped.print_message(&self.command);
-                // return Status::Skipped;
-                return Status::Normal;
-            }
+    fn execute_command(&self) -> Result<String, io::Error> {
+        if self.should_skip() {
+            return Ok("Skipped".to_string());
         }
 
-        let mut output =
-            process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
-                .arg("-c")
-                .arg(&self.command)
-                .spawn()
-                .expect("Failed to execute command");
+        let output = self.run_command()?;
 
-        let status = match output.wait() {
-            Ok(status) => status,
+        if output.status.success() {
+            Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+        } else {
+            self.handle_command_error(output)
+        }
+    }
+
+    pub fn interact_mode(&self) -> Status {
+        if self.should_skip() {
+            return Status::Normal;
+        }
+
+        let mut output = match self.spawn_command() {
+            Ok(output) => output,
             Err(err) => {
-                eprintln!("Failed to wait on child: {}", err);
-                Status::Failure.print_message(&self.command);
+                eprintln!("Failed to execute command: {}", err);
                 return Status::Failure;
             }
         };
 
-        match status.code() {
-            Some(0) => {
-                Status::Success.print_message(&self.command);
-                Status::Success
-            }
-            Some(_) => {
-                Status::Failure.print_message(&self.command);
-                Status::Failure
-            }
-            None => {
-                eprintln!("Command terminated by signal");
-                Status::Failure.print_message(&self.command);
+        match output.wait() {
+            Ok(status) => self.handle_status(status),
+            Err(err) => {
+                eprintln!("Failed to wait on child: {}", err);
                 Status::Failure
             }
         }
@@ -91,13 +102,7 @@ impl CommandStruct {
     ) -> Result<bool, Box<dyn error::Error>> {
         Status::Running.print_message(&format!("==> Checking command: {}", command));
 
-        let output = match process::Command::new("sh").arg("-c").arg(command).output() {
-            Ok(output) => output,
-            Err(e) => {
-                Status::Failure.print_message(&format!("Command failed: {}", command));
-                return Err(Box::new(e));
-            }
-        };
+        let output = process::Command::new("sh").arg("-c").arg(command).output()?;
 
         if output.status.success() && check(output) {
             Status::Success.print_message(&format!("\t--> Checked is true: {}", command));
