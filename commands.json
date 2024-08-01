@@ -27,7 +27,7 @@
       ],
       "configs": [
         {
-          "check": null,
+          "check": "echo $SHELL | grep -q 'zsh' && echo 'true'",
           "command": {
             "command": "chsh -s $(which zsh)"
           }
@@ -125,12 +125,7 @@
           }
         },
         {
-          "command": {
-            "command": "echo -> !TODO: Sign in to GitHub CLI with 'gh auth login'"
-          }
-        },
-        {
-          "check": null,
+          "check": "gh auth status | grep -q 'Logged in to github.com' && echo 'true'",
           "command": { "command": "gh auth login" }
         }
       ],
@@ -262,6 +257,7 @@
     },
     {
       "description": "Install Nerd Fonts for Ubuntu",
+      "check": "if [ -d /usr/share/fonts/Hack ]; then echo 'true'; fi",
       "commands": [
         {
           "distribution": "Ubuntu",
@@ -309,7 +305,7 @@
       ],
       "configs": [
         {
-          "check": null,
+          "check": "groups | grep -q 'docker' && echo 'true'",
           "command": { "command": "sudo groupadd docker" }
         },
         {
