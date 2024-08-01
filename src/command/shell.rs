@@ -2,10 +2,11 @@ use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Default)]
 pub enum Shell {
     Bash,
     Zsh,
+    #[default]
     Sh,
     Custom(String),
 }

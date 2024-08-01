@@ -27,9 +27,9 @@
       ],
       "configs": [
         {
-          "check": null,
+          "check": "echo $SHELL | grep -q 'zsh' && echo 'true'",
           "command": {
-            "command": "echo \"chsh -s $(which zsh)\""
+            "command": "chsh -s $(which zsh)"
           }
         }
       ]
@@ -125,12 +125,7 @@
           }
         },
         {
-          "command": {
-            "command": "echo -> !TODO: Sign in to GitHub CLI with 'gh auth login'"
-          }
-        },
-        {
-          "check": null,
+          "check": "gh auth status | grep -q 'Logged in to github.com' && echo 'true'",
           "command": { "command": "gh auth login" }
         }
       ],
@@ -160,7 +155,7 @@
         },
         {
           "check": null,
-          "command": { "command": "source ~/.zshrc" }
+          "command": { "command": "source ~/.zshrc" , "shell": "Zsh" }
         }
       ]
     },
@@ -200,7 +195,7 @@
       "configs": [
         {
           "command": {
-            "command": "echo -> !TODO: Sign in to Microsoft Edge Beta"
+            "command": "echo '-> !TODO: Sign in to Microsoft Edge Beta'"
           }
         }
       ]
@@ -225,7 +220,7 @@
       "configs": [
         {
           "command": {
-            "command": "echo -> !TODO: Sign in to Visual Studio Code Insiders"
+            "command": "echo '-> !TODO: Sign in to Visual Studio Code Insiders'"
           }
         }
       ]
@@ -262,6 +257,7 @@
     },
     {
       "description": "Install Nerd Fonts for Ubuntu",
+      "check": "if [ -d /usr/share/fonts/Hack ]; then echo 'true'; fi",
       "commands": [
         {
           "distribution": "Ubuntu",
@@ -309,7 +305,7 @@
       ],
       "configs": [
         {
-          "check": null,
+          "check": "groups | grep -q 'docker' && echo 'true'",
           "command": { "command": "sudo groupadd docker" }
         },
         {

@@ -1,7 +1,7 @@
 mod command_runner;
 mod configurator;
-mod repository;
 pub mod executable_setup;
+mod repository;
 
 pub use command_runner::CommandRunner;
 pub use configurator::Configurator;

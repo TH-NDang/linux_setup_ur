@@ -26,6 +26,7 @@ impl Configurator for ConfigItem {
             }
         }
 
+        Status::Running.print_message(&format!("==> Applying config: {}", self.command.command()));
         self.command.interact_mode()
     }
 
