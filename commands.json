@@ -1,7 +1,7 @@
 {
   "entries": [
     {
-      "check": null,
+      "description": "System Update",
       "commands": [
         {
           "distribution": "ArchLinux",
@@ -9,49 +9,20 @@
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt update && sudo apt upgrade -y"
+          "command": "sudo apt update -y && sudo apt upgrade -y"
         }
-      ],
-      "configs": null
+      ]
     },
     {
-      "check": null,
+      "description": "Install Essential Packages",
       "commands": [
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm curl"
+          "command": "sudo pacman -S --noconfirm --needed curl wget zsh git"
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y curl"
-        }
-      ],
-      "configs": null
-    },
-    {
-      "check": null,
-      "commands": [
-        {
-          "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm wget"
-        },
-        {
-          "distribution": "Ubuntu",
-          "command": "sudo apt install -y wget"
-        }
-      ],
-      "configs": null
-    },
-    {
-      "check": null,
-      "commands": [
-        {
-          "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm zsh"
-        },
-        {
-          "distribution": "Ubuntu",
-          "command": "sudo apt install -y zsh"
+          "command": "sudo apt install -y curl wget zsh git"
         }
       ],
       "configs": [
@@ -64,15 +35,16 @@
       ]
     },
     {
+      "description": "Setup Workspace Directory",
       "check": "if [ -d ~/.workspace ]; then echo 'true'; fi",
       "commands": [
         {
           "command": "mkdir -p ~/.workspace"
         }
-      ],
-      "configs": null
+      ]
     },
     {
+      "description": "Install Oh My Zsh and Plugins",
       "check": "if [ -d ~/.oh-my-zsh ]; then echo 'true'; fi",
       "commands": [
         {
@@ -93,23 +65,21 @@
           }
         },
         {
-          "check": null,
           "command": {
             "command": "sed -i '/^plugins=(.*)$/s//plugins=(zsh-autosuggestions zsh-syntax-highlighting git docker)/' ~/.zshrc"
           }
         },
         {
-          "check": null,
           "command": { "command": "source ~/.zshrc", "shell": "Zsh" }
         }
       ]
     },
     {
-      "check": null,
+      "description": "Git Configuration",
       "commands": [
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm git"
+          "command": "sudo pacman -S --noconfirm --needed git"
         },
         {
           "distribution": "Ubuntu",
@@ -118,57 +88,43 @@
       ],
       "configs": [
         {
-          "check": null,
           "command": {
-            "working_dir": "~",
-            "env_vars": ["GIT_USER_NAME"],
             "command": "git config --global user.name $GIT_USER_NAME"
           }
         },
         {
-          "check": null,
           "command": {
-            "working_der": "~",
-            "env_vars": ["GIT_USER_EMAIL"],
             "command": "git config --global user.email $GIT_USER_EMAIL"
           }
         },
         {
-          "check": null,
           "command": {
             "command": "git config --global init.defaultBranch main"
           }
         },
         {
-          "check": null,
           "command": {
-            "working_dir": "~",
             "command": "git config --global core.editor code-insiders --wait"
           }
         },
         {
-          "check": null,
           "command": {
-            "working_dir": "~",
             "command": "git config --global pull.rebase true"
           }
         },
         {
-          "check": null,
           "command": {
             "distribution": "Ubuntu",
             "command": "sudo apt install gh -y"
           }
         },
         {
-          "check": null,
           "command": {
             "distribution": "ArchLinux",
-            "command": "sudo pacman -S github-cli --noconfirm"
+            "command": "sudo pacman -S --noconfirm --needed github-cli"
           }
         },
         {
-          "check": null,
           "command": {
             "command": "echo -> !TODO: Sign in to GitHub CLI with 'gh auth login'"
           }
@@ -184,15 +140,15 @@
       }
     },
     {
-      "check": null,
+      "description": "Install Additional Tools",
       "commands": [
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y btop eza"
+          "command": "sudo apt install -y btop eza gnome-tweaks"
         },
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm btop eza"
+          "command": "sudo pacman -S --noconfirm --needed btop eza"
         }
       ],
       "configs": [
@@ -209,6 +165,7 @@
       ]
     },
     {
+      "description": "Install Microsoft Edge Beta",
       "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
       "commands": [
         {
@@ -242,7 +199,6 @@
       ],
       "configs": [
         {
-          "check": null,
           "command": {
             "command": "echo -> !TODO: Sign in to Microsoft Edge Beta"
           }
@@ -250,6 +206,7 @@
       ]
     },
     {
+      "description": "Install Visual Studio Code Insiders",
       "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
       "commands": [
         {
@@ -267,7 +224,6 @@
       ],
       "configs": [
         {
-          "check": null,
           "command": {
             "command": "echo -> !TODO: Sign in to Visual Studio Code Insiders"
           }
@@ -275,15 +231,7 @@
       ]
     },
     {
-      "check": null,
-      "commands": [
-        {
-          "distribution": "Ubuntu",
-          "command": "sudo apt install -y gnome-tweaks"
-        }
-      ]
-    },
-    {
+      "description": "Install IBus Bamboo for Ubuntu",
       "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
       "commands": [
         {
@@ -310,10 +258,10 @@
           "distribution": "Ubuntu",
           "command": "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'us'), ('ibus', 'BambooUs')]\""
         }
-      ],
-      "configs": null
+      ]
     },
     {
+      "description": "Install Nerd Fonts for Ubuntu",
       "commands": [
         {
           "distribution": "Ubuntu",
@@ -336,6 +284,7 @@
       ]
     },
     {
+      "description": "Install Docker",
       "commands": [
         {
           "distribution": "Ubuntu",
@@ -347,7 +296,7 @@
         },
         {
           "distribution": "Ubuntu",
-          "command": "echo \n\"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \n$(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | \nsudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
+          "command": "echo \"deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo \"$VERSION_CODENAME\") stable\" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null"
         },
         {
           "distribution": "Ubuntu",

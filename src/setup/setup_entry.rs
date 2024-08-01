@@ -59,6 +59,7 @@ pub struct SetupEntry {
     commands: Vec<CommandStruct>,
     configs: Option<Vec<ConfigItem>>,
     setup: Option<SetupItem>,
+    description: Option<String>,
 }
 impl SetupEntry {
     fn run_commands(&self) -> Status {
@@ -123,6 +124,7 @@ impl CommandRunner for SetupEntry {
 
 impl ExecutableSetup for SetupEntry {
     fn setup(&mut self) -> Status {
+        Status::Running.print_message(&format!("Setup: {:?}", self.description));
         if let Some(setup) = &mut self.setup {
             if let Err(e) = setup.ensure_working_dir() {
                 eprintln!("Error creating working directory: {}", e);
