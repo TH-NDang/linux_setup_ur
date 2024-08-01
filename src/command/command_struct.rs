@@ -1,4 +1,4 @@
-use std::{error, io, process};
+use std::{cell::RefCell, error, io, process};
 
 use serde::{Deserialize, Serialize};
 
@@ -7,11 +7,16 @@ use crate::{
     distribution::identify_linux_distribution, utils::Status, CommandRunner, DistributionType,
 };
 
+const COMMAND_NOT_FOUND: &str = "Command not found";
+const COMMAND_EXECUTION_FAILED: &str = "Command execution failed";
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommandStruct {
     command: String,
     shell: Option<Shell>,
     distribution: Option<DistributionType>,
+    #[serde(skip)]
+    status: RefCell<Status>,
 }
 impl CommandStruct {
     fn should_skip(&self) -> bool {
@@ -30,15 +35,11 @@ impl CommandStruct {
             .output()
     }
 
-    fn handle_command_error(&self, output: process::Output) -> Result<String, io::Error> {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        if stderr.contains("command not found") {
-            Err(io::Error::new(io::ErrorKind::NotFound, "Command not found"))
+    fn handle_command_error(&self, stderr: &str) -> io::Error {
+        if stderr.contains(COMMAND_NOT_FOUND) {
+            io::Error::new(io::ErrorKind::NotFound, COMMAND_NOT_FOUND)
         } else {
-            Err(io::Error::new(
-                io::ErrorKind::Other,
-                "Command execution failed",
-            ))
+            io::Error::new(io::ErrorKind::Other, COMMAND_EXECUTION_FAILED)
         }
     }
 
@@ -49,49 +50,70 @@ impl CommandStruct {
             .spawn()
     }
 
-    fn handle_status(&self, status: process::ExitStatus) -> Status {
-        match status.code() {
-            Some(0) => Status::Success,
-            Some(_) => Status::Failure,
+    fn handle_status(&self, exit_status: &std::process::ExitStatus) -> Status {
+        match exit_status.code() {
+            Some(0) => {
+                self.set_status(Status::Success, &format!("{}", self.command));
+                self.status.borrow().clone()
+            }
+            Some(_) => {
+                self.set_status(
+                    Status::Failure,
+                    &format!("{} [Exit code: {:?}]", self.command, exit_status.code()),
+                );
+                self.status.borrow().clone()
+            }
             None => {
-                eprintln!("Command terminated by signal");
-                Status::Failure
+                self.set_status(
+                    Status::Failure,
+                    &format!("{} [Command terminated by signal]", self.command),
+                );
+                self.status.borrow().clone()
             }
         }
     }
 
-    fn execute_command(&self) -> Result<String, io::Error> {
+    fn set_status(&self, status: Status, message: &str) {
+        self.status.replace(status);
+        self.status.borrow().print_message(message);
+    }
+
+    fn execute_command(&self) -> io::Result<String> {
         if self.should_skip() {
+            self.status.replace(Status::Skipped);
             return Ok("Skipped".to_string());
         }
 
         let output = self.run_command()?;
-
         if output.status.success() {
-            Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+            let output_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            self.set_status(Status::Success, &format!("{}", self.command));
+            Ok(output_str)
         } else {
-            self.handle_command_error(output)
+            self.set_status(Status::Failure, &format!("{}", self.command));
+            Err(self.handle_command_error(&String::from_utf8_lossy(&output.stderr)))
         }
     }
 
     pub fn interact_mode(&self) -> Status {
         if self.should_skip() {
-            return Status::Normal;
+            self.status.replace(Status::Skipped);
+            return self.status.borrow().clone();
         }
 
-        let mut output = match self.spawn_command() {
-            Ok(output) => output,
+        let mut child = match self.spawn_command() {
+            Ok(child) => child,
             Err(err) => {
-                eprintln!("Failed to execute command: {}", err);
-                return Status::Failure;
+                self.set_status(Status::Failure, &format!("Error: {}", err));
+                return self.status.borrow().clone();
             }
         };
 
-        match output.wait() {
+        match &child.wait() {
             Ok(status) => self.handle_status(status),
             Err(err) => {
-                eprintln!("Failed to wait on child: {}", err);
-                Status::Failure
+                self.set_status(Status::Failure, &format!("Error to wait on child: {}", err));
+                self.status.borrow().clone()
             }
         }
     }
@@ -100,29 +122,21 @@ impl CommandStruct {
         command: &str,
         check: impl Fn(process::Output) -> bool,
     ) -> Result<bool, Box<dyn error::Error>> {
-        Status::Running.print_message(&format!("==> Checking command: {}", command));
+        let output = process::Command::new("sh")
+            .arg("-c")
+            .arg(command)
+            .output()?;
 
-        let output = process::Command::new("sh").arg("-c").arg(command).output()?;
-
-        if output.status.success() && check(output) {
-            Status::Success.print_message(&format!("\t--> Checked is true: {}", command));
-            Ok(true)
-        } else {
-            Status::Failure.print_message(&format!("\t--> Checked is false: {}", command));
-            Ok(false)
-        }
+        Ok(output.status.success() && check(output))
     }
 }
 impl CommandRunner for CommandStruct {
     fn run(&self) -> Status {
-        Status::Running.print_message(&self.command);
         match self.execute_command() {
-            Ok(_) => {
-                Status::Success.print_message(&self.command);
-                Status::Success
-            }
-            Err(_) => {
-                Status::Failure.print_message(&self.command);
+            Ok(_) => self.status.borrow().clone(),
+            Err(e) => {
+                self.set_status(Status::Failure, &format!("{}", self.command));
+                eprintln!("Error: {}", e);
                 Status::Failure
             }
         }
@@ -132,8 +146,8 @@ impl CommandRunner for CommandStruct {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cell::RefCell;
     use std::process::Output;
-    use std::io;
 
     #[test]
     fn test_execute_command_success() {
@@ -141,6 +155,7 @@ mod tests {
             command: "echo Hello".to_string(),
             shell: Some(Shell::Sh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
         let result = command_struct.execute_command();
@@ -154,6 +169,7 @@ mod tests {
             command: "invalid_command".to_string(),
             shell: Some(Shell::Sh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
         let result = command_struct.execute_command();
@@ -166,6 +182,7 @@ mod tests {
             command: "echo Hello".to_string(),
             shell: Some(Shell::Sh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
         let status = command_struct.interact_mode();
@@ -178,6 +195,7 @@ mod tests {
             command: "invalid_command".to_string(),
             shell: Some(Shell::Sh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
         let status = command_struct.interact_mode();
@@ -211,6 +229,7 @@ mod tests {
             command: "echo Hello".to_string(),
             shell: Some(Shell::Sh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
         let status = command_struct.run();
@@ -223,6 +242,7 @@ mod tests {
             command: "invalid_command".to_string(),
             shell: Some(Shell::Sh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
         let status = command_struct.run();
@@ -244,10 +264,11 @@ mod tests {
             command: format!("source {}", zshrc_path.display()),
             shell: Some(Shell::Zsh),
             distribution: None,
+            status: RefCell::new(Status::Normal),
         };
 
-        let status = command_struct.execute_command();
-        assert!(status.is_ok());
+        let status = command_struct.run();
+        assert_eq!(status, Status::Success);
 
         fs::remove_file(zshrc_path).expect("Unable to delete .zshrc file");
     }

@@ -5,23 +5,28 @@ use crate::utils::Color;
 
 /// Defines an enum representing different statuses of a command execution.
 /// Implements `print_message(message: &str)` methods to print messages based on the command status.
-#[derive(Serialize, Deserialize, PartialEq, Eq, Debug)]
+#[derive(Serialize, Deserialize, PartialEq, Eq, Debug, Clone, Default)]
 pub enum Status {
     Running,
     Success,
     Warning,
     Failure,
+    #[default]
     Normal,
+    Skipped,
+    Passed,
 }
 
 impl Status {
     pub fn print_message(&self, message: &str) {
         use Status::*;
         match self {
-            Running => println!("{}==> ⏳ Running: {}{}", self, message, Normal),
-            Success => println!("{}==> ✅ Success: {}{}", self, message, Normal),
-            Warning => println!("{}==> ⚠️ Warning: {}{}", self, message, Normal),
-            Failure => eprintln!("{}==> ❌ Failed: {}{}", self, message, Normal),
+            Running => println!("{}==> ⏳ Running:{} {}", self, Normal, message),
+            Success => println!("{}==> ✅ Success:{} {}", self, Normal, message),
+            Warning => println!("{}==> ⚠️ Warning:{} {}", self, Normal, message),
+            Failure => eprintln!("{}==> ❌ Failed:{} {}", self, Normal, message),
+            Skipped => println!("{}==> ⏭️ Skipped:{} {}", self, Normal, message),
+            Passed => println!("{}==> ✔️ Passed:{} {}", self, Normal, message),
             Normal => println!("{}", message),
         }
     }
@@ -42,6 +47,8 @@ impl Status {
             Warning => Color::Yellow,
             Failure => Color::Red,
             Normal => Color::None,
+            Skipped => Color::Yellow,
+            Passed => Color::Yellow,
         }
     }
 }
