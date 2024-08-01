@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{utils::Status, CommandRunner, Repository};
 
-use super::{CommandStruct};
+use super::CommandStruct;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct CommandRepository {

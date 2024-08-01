@@ -29,7 +29,7 @@
         {
           "check": null,
           "command": {
-            "command": "echo \"chsh -s $(which zsh)\""
+            "command": "chsh -s $(which zsh)"
           }
         }
       ]
@@ -160,7 +160,7 @@
         },
         {
           "check": null,
-          "command": { "command": "source ~/.zshrc" }
+          "command": { "command": "source ~/.zshrc" , "shell": "Zsh" }
         }
       ]
     },
@@ -200,7 +200,7 @@
       "configs": [
         {
           "command": {
-            "command": "echo -> !TODO: Sign in to Microsoft Edge Beta"
+            "command": "echo '-> !TODO: Sign in to Microsoft Edge Beta'"
           }
         }
       ]
@@ -225,7 +225,7 @@
       "configs": [
         {
           "command": {
-            "command": "echo -> !TODO: Sign in to Visual Studio Code Insiders"
+            "command": "echo '-> !TODO: Sign in to Visual Studio Code Insiders'"
           }
         }
       ]

@@ -59,9 +59,13 @@ pub struct SetupEntry {
     commands: Vec<CommandStruct>,
     configs: Option<Vec<ConfigItem>>,
     setup: Option<SetupItem>,
-    description: Option<String>,
+    description: String,
 }
 impl SetupEntry {
+    pub fn get_description(&self) -> &String {
+        &self.description
+    }
+
     fn run_commands(&self) -> Status {
         let failed = self
             .commands
@@ -107,14 +111,10 @@ impl CommandRunner for SetupEntry {
         }
 
         if process != Status::Success {
-            println!("==> Running commands: {:?}", self.commands);
             process = self.run_commands();
-        } else {
-            println!("==> Commands: {:?} [skipped]", self.commands);
         }
 
         if self.configs.is_some() && process != Status::Failure {
-            println!("==> Running commands [config]");
             process = self.run_configs();
         }
 
