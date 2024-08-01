@@ -19,6 +19,10 @@ pub struct CommandStruct {
     status: RefCell<Status>,
 }
 impl CommandStruct {
+    pub fn command(&self) -> &str {
+        &self.command
+    }
+
     fn should_skip(&self) -> bool {
         if let Some(distribution) = &self.distribution {
             if *distribution != identify_linux_distribution() {
