@@ -111,21 +111,25 @@ impl SetupEntry {
             self.remove_command(*index);
         }
     }
+
+    fn validate_setup(&self, process: &mut Status) {
+        if let Some(check) = &self.check {
+            if let Ok(result) = CommandStruct::validate_command(&check, |output| {
+                !String::from_utf8_lossy(&output.stdout).is_empty()
+            }) {
+                if result {
+                    *process = Status::Success;
+                }
+            }
+        }
+    }
 }
 
 impl CommandRunner for SetupEntry {
     fn run(&self) -> Status {
         let mut process = Status::Running;
 
-        if let Some(check) = &self.check {
-            if let Ok(result) = CommandStruct::validate_command(&check, |output| {
-                !String::from_utf8_lossy(&output.stdout).is_empty()
-            }) {
-                if result {
-                    process = Status::Success;
-                }
-            }
-        }
+        self.validate_setup(&mut process);
 
         if process != Status::Success {
             process = self.run_commands();
