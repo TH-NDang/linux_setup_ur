@@ -5,8 +5,8 @@ pub mod setup;
 pub mod traits;
 pub mod utils;
 
-pub use command::{CommandRepository, CommandStruct};
-pub use config::{ConfigItem, ConfigRepository};
+pub use command::CommandStruct;
+pub use config::ConfigItem;
 pub use distribution::DistributionType;
 pub use setup::{SetupEntry, SetupRegistry};
 pub use traits::{CommandRunner, Configurator, Repository};
