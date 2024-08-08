@@ -187,6 +187,7 @@ mod tests {
             shell: Some(Shell::Sh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let result = command_struct.execute_command();
@@ -201,6 +202,7 @@ mod tests {
             shell: Some(Shell::Sh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let result = command_struct.execute_command();
@@ -214,6 +216,7 @@ mod tests {
             shell: Some(Shell::Sh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let status = command_struct.interact_mode();
@@ -227,6 +230,7 @@ mod tests {
             shell: Some(Shell::Sh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let status = command_struct.interact_mode();
@@ -235,21 +239,36 @@ mod tests {
 
     #[test]
     fn test_validate_command_success() {
-        let command = "echo Hello";
-        let check =
-            |output: Output| -> bool { String::from_utf8_lossy(&output.stdout).contains("Hello") };
+        let command = CommandStruct {
+            command: "echo Hello".to_string(),
+            shell: Some(Shell::Sh),
+            distribution: None,
+            status: RefCell::new(Status::Normal),
+            check: Some("echo true".to_string()),
+        };
 
-        let result = CommandStruct::validate_command(command, check);
+        let check =
+            |output: Output| -> bool { String::from_utf8_lossy(&output.stdout).contains("true") };
+
+        let result = command.validate_command(check);
         assert!(result.is_ok());
         assert!(result.unwrap());
     }
 
     #[test]
     fn test_validate_command_failure() {
-        let command = "invalid_command";
-        let check = |_output: Output| -> bool { false };
+        let command = CommandStruct {
+            command: "invalid_command".to_string(),
+            shell: Some(Shell::Sh),
+            distribution: None,
+            status: RefCell::new(Status::Normal),
+            check: Some("echo".to_string()),
+        };
 
-        let result = CommandStruct::validate_command(command, check);
+        let check =
+            |output: Output| -> bool { String::from_utf8_lossy(&output.stdout).contains("Hello") };
+
+        let result = command.validate_command(check);
         assert!(result.is_ok());
         assert!(!result.unwrap());
     }
@@ -261,6 +280,7 @@ mod tests {
             shell: Some(Shell::Sh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let status = command_struct.run();
@@ -274,6 +294,7 @@ mod tests {
             shell: Some(Shell::Sh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let status = command_struct.run();
@@ -296,6 +317,7 @@ mod tests {
             shell: Some(Shell::Zsh),
             distribution: None,
             status: RefCell::new(Status::Normal),
+            check: None,
         };
 
         let status = command_struct.run();
