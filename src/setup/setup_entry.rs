@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::traits::executable_setup::ExecutableSetup;
 use crate::Configurator;
-use crate::{utils::Status, CommandRunner, CommandStruct, ConfigItem};
+use crate::{utils::Status, CommandRunner, CommandStruct, Config};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SetupItem {
@@ -55,9 +55,8 @@ impl SetupItem {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SetupEntry {
-    check: Option<String>,
     commands: Vec<CommandStruct>,
-    configs: Option<Vec<ConfigItem>>,
+    config: Option<Config>,
     setup: Option<SetupItem>,
     description: String,
 }
@@ -80,19 +79,29 @@ impl SetupEntry {
         Status::Success
     }
 
-    fn run_configs(&self) -> Status {
-        if let Some(configs) = &self.configs {
-            let failed = configs
-                .iter()
-                .filter(|config| config.apply() == Status::Failure)
-                .count();
-
-            if failed > 0 {
-                return Status::Failure;
-            }
+    fn run_config(&self) -> Status {
+        if let Some(config) = &self.config {
+            return config.apply();
         }
 
         Status::Success
+    }
+
+    pub fn remove_command(&mut self, index: usize) {
+        self.commands.remove(index);
+    }
+
+    pub fn clear_commands(&mut self) {
+        let mut commands_to_remove = Vec::new();
+        for (index, command) in self.commands.iter().enumerate() {
+            if command.should_skip() {
+                commands_to_remove.push(index);
+            }
+        }
+
+        for index in commands_to_remove.iter().rev() {
+            self.remove_command(*index);
+        }
     }
 }
 
@@ -100,22 +109,12 @@ impl CommandRunner for SetupEntry {
     fn run(&self) -> Status {
         let mut process = Status::Running;
 
-        if let Some(check) = &self.check {
-            if let Ok(result) = CommandStruct::validate_command(&check, |output| {
-                !String::from_utf8_lossy(&output.stdout).is_empty()
-            }) {
-                if result {
-                    process = Status::Success;
-                }
-            }
-        }
-
         if process != Status::Success {
             process = self.run_commands();
         }
 
-        if self.configs.is_some() && process != Status::Failure {
-            process = self.run_configs();
+        if self.config.is_some() && process != Status::Failure {
+            process = self.run_config();
         }
 
         process
@@ -124,6 +123,8 @@ impl CommandRunner for SetupEntry {
 
 impl ExecutableSetup for SetupEntry {
     fn setup(&mut self) -> Status {
+        self.clear_commands();
+
         Status::Running.print_message(&format!("Setup: {:?}", self.description));
         if let Some(setup) = &mut self.setup {
             if let Err(e) = setup.ensure_working_dir() {
