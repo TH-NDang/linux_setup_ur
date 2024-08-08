@@ -1,3 +1,3 @@
 mod config_item;
 
-pub use config_item::ConfigItem;
+pub use config_item::Config;

@@ -3,31 +3,24 @@ use serde::{Deserialize, Serialize};
 use crate::{utils::Status, CommandStruct, Configurator};
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ConfigItem {
-    check: Option<String>,
-    command: CommandStruct,
+pub struct Config {
+    commands: Vec<CommandStruct>,
 }
 
-impl Configurator for ConfigItem {
+impl Configurator for Config {
     fn apply(&self) -> Status {
-        if let Some(check) = &self.check {
-            match CommandStruct::validate_command(check, |output| {
-                !String::from_utf8_lossy(&output.stdout).is_empty()
-            }) {
-                Ok(result) => {
-                    if result {
-                        return Status::Success;
-                    }
-                }
-                Err(e) => {
-                    Status::Failure.print_message(&format!("Error validating check: {}", e));
-                    return Status::Failure;
-                }
-            }
+        Status::Running.print_message("Applying configuration");
+        let failed = self
+            .commands
+            .iter()
+            .filter(|command| command.interact_mode() == Status::Failure)
+            .count();
+
+        if failed > 0 {
+            return Status::Failure;
         }
 
-        Status::Running.print_message(&format!("==> Applying config: {}", self.command.command()));
-        self.command.interact_mode()
+        Status::Success
     }
 
     fn revert(&self) -> Status {

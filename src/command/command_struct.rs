@@ -17,6 +17,7 @@ pub struct CommandStruct {
     distribution: Option<DistributionType>,
     #[serde(skip)]
     status: RefCell<Status>,
+    check: Option<String>,
 }
 impl CommandStruct {
     pub fn command(&self) -> &str {
@@ -88,6 +89,17 @@ impl CommandStruct {
             return Ok("Skipped".to_string());
         }
 
+        if self.check.is_some() {
+            if let Ok(result) =
+                self.validate_command(|output| !String::from_utf8_lossy(&output.stdout).is_empty())
+            {
+                if result {
+                    self.set_status(Status::Passed, &format!("{}", self.command));
+                    return Ok("Passed".to_string());
+                }
+            }
+        }
+
         let output = self.run_command()?;
         if output.status.success() {
             let output_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
@@ -103,6 +115,17 @@ impl CommandStruct {
         if self.should_skip() {
             self.status.replace(Status::Skipped);
             return self.status.borrow().clone();
+        }
+
+        if self.check.is_some() {
+            if let Ok(result) =
+                self.validate_command(|output| !String::from_utf8_lossy(&output.stdout).is_empty())
+            {
+                if result {
+                    self.set_status(Status::Passed, &format!("{}", self.command));
+                    return self.status.borrow().clone();
+                }
+            }
         }
 
         let mut child = match self.spawn_command() {
@@ -122,13 +145,13 @@ impl CommandStruct {
         }
     }
 
-    pub fn validate_command(
-        command: &str,
+    fn validate_command(
+        &self,
         check: impl Fn(process::Output) -> bool,
     ) -> Result<bool, Box<dyn error::Error>> {
         let output = process::Command::new("sh")
             .arg("-c")
-            .arg(command)
+            .arg(&self.check.as_ref().unwrap())
             .output()?;
 
         Ok(output.status.success() && check(output))

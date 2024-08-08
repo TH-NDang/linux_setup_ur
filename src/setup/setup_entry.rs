@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::traits::executable_setup::ExecutableSetup;
 use crate::Configurator;
-use crate::{utils::Status, CommandRunner, CommandStruct, ConfigItem};
+use crate::{utils::Status, CommandRunner, CommandStruct, Config};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SetupItem {
@@ -55,9 +55,8 @@ impl SetupItem {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct SetupEntry {
-    check: Option<String>,
     commands: Vec<CommandStruct>,
-    configs: Option<Vec<ConfigItem>>,
+    config: Option<Config>,
     setup: Option<SetupItem>,
     description: String,
 }
@@ -80,16 +79,9 @@ impl SetupEntry {
         Status::Success
     }
 
-    fn run_configs(&self) -> Status {
-        if let Some(configs) = &self.configs {
-            let failed = configs
-                .iter()
-                .filter(|config| config.apply() == Status::Failure)
-                .count();
-
-            if failed > 0 {
-                return Status::Failure;
-            }
+    fn run_config(&self) -> Status {
+        if let Some(config) = &self.config {
+            return config.apply();
         }
 
         Status::Success
@@ -111,32 +103,18 @@ impl SetupEntry {
             self.remove_command(*index);
         }
     }
-
-    fn validate_setup(&self, process: &mut Status) {
-        if let Some(check) = &self.check {
-            if let Ok(result) = CommandStruct::validate_command(&check, |output| {
-                !String::from_utf8_lossy(&output.stdout).is_empty()
-            }) {
-                if result {
-                    *process = Status::Success;
-                }
-            }
-        }
-    }
 }
 
 impl CommandRunner for SetupEntry {
     fn run(&self) -> Status {
         let mut process = Status::Running;
 
-        self.validate_setup(&mut process);
-
         if process != Status::Success {
             process = self.run_commands();
         }
 
-        if self.configs.is_some() && process != Status::Failure {
-            process = self.run_configs();
+        if self.config.is_some() && process != Status::Failure {
+            process = self.run_config();
         }
 
         process
