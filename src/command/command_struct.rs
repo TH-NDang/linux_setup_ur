@@ -133,6 +133,10 @@ impl CommandStruct {
 
         Ok(output.status.success() && check(output))
     }
+
+    pub fn distribution(&self) -> Option<&DistributionType> {
+        self.distribution.as_ref()
+    }
 }
 impl CommandRunner for CommandStruct {
     fn run(&self) -> Status {

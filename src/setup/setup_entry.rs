@@ -4,6 +4,7 @@ use std::{fs, io};
 
 use serde::{Deserialize, Serialize};
 
+use crate::distribution::identify_linux_distribution;
 use crate::traits::executable_setup::ExecutableSetup;
 use crate::Configurator;
 use crate::{utils::Status, CommandRunner, CommandStruct, ConfigItem};
@@ -94,6 +95,27 @@ impl SetupEntry {
 
         Status::Success
     }
+
+    pub fn remove_command(&mut self, index: usize) {
+        self.commands.remove(index);
+    }
+
+    pub fn clear_commands(&mut self) {
+        let mut commands_to_remove = Vec::new();
+        for (index, command) in self.commands.iter().enumerate() {
+            let distro = identify_linux_distribution();
+
+            if let Some(distribution) = &command.distribution() {
+                if **distribution != distro {
+                    commands_to_remove.push(index);
+                }
+            }
+        }
+
+        for index in commands_to_remove.iter().rev() {
+            self.remove_command(*index);
+        }
+    }
 }
 
 impl CommandRunner for SetupEntry {
@@ -124,6 +146,8 @@ impl CommandRunner for SetupEntry {
 
 impl ExecutableSetup for SetupEntry {
     fn setup(&mut self) -> Status {
+        self.clear_commands();
+
         Status::Running.print_message(&format!("Setup: {:?}", self.description));
         if let Some(setup) = &mut self.setup {
             if let Err(e) = setup.ensure_working_dir() {
