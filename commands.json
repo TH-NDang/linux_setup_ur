@@ -25,54 +25,52 @@
           "command": "sudo apt install -y curl wget zsh git"
         }
       ],
-      "configs": [
-        {
-          "check": "echo $SHELL | grep -q 'zsh' && echo 'true'",
-          "command": {
+      "config": {
+        "commands": [
+          {
+            "check": "echo $SHELL | grep -q 'zsh' && echo 'true'",
             "command": "chsh -s $(which zsh)"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Setup Workspace Directory",
-      "check": "if [ -d ~/.workspace ]; then echo 'true'; fi",
       "commands": [
         {
+          "check": "if [ -d ~/.workspace ]; then echo 'true'; fi",
           "command": "mkdir -p ~/.workspace"
         }
       ]
     },
     {
       "description": "Install Oh My Zsh and Plugins",
-      "check": "if [ -d ~/.oh-my-zsh ]; then echo 'true'; fi",
       "commands": [
         {
+          "check": "if [ -d ~/.oh-my-zsh ]; then echo 'true'; fi",
           "command": "sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\""
         }
       ],
-      "configs": [
-        {
-          "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions ]; then echo 'true'; fi",
-          "command": {
+      "config": {
+        "commands": [
+          {
+            "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions ]; then echo 'true'; fi",
             "command": "git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions"
-          }
-        },
-        {
-          "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting ]; then echo 'true'; fi",
-          "command": {
+          },
+          {
+            "check": "if [ -d ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting ]; then echo 'true'; fi",
+
             "command": "git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "command": "sed -i '/^plugins=(.*)$/s//plugins=(zsh-autosuggestions zsh-syntax-highlighting git docker)/' ~/.zshrc"
+          },
+          {
+            "command": "source ~/.zshrc",
+            "shell": "Zsh"
           }
-        },
-        {
-          "command": { "command": "source ~/.zshrc", "shell": "Zsh" }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Git Configuration",
@@ -86,49 +84,35 @@
           "command": "sudo apt install -y git"
         }
       ],
-      "configs": [
-        {
-          "command": {
-            "command": "git config --global user.name $GIT_USER_NAME"
-          }
-        },
-        {
-          "command": {
+      "config": {
+        "commands": [
+          { "command": "git config --global user.name $GIT_USER_NAME" },
+          {
             "command": "git config --global user.email $GIT_USER_EMAIL"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "command": "git config --global init.defaultBranch main"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "command": "git config --global core.editor code-insiders --wait"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "command": "git config --global pull.rebase true"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "distribution": "Ubuntu",
             "command": "sudo apt install gh -y"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "distribution": "ArchLinux",
             "command": "sudo pacman -S --noconfirm --needed github-cli"
+          },
+          {
+            "check": "gh auth status | grep -q 'Logged in to github.com' && echo 'true'",
+            "command": "gh auth login"
           }
-        },
-        {
-          "check": "gh auth status | grep -q 'Logged in to github.com' && echo 'true'",
-          "command": { "command": "gh auth login" }
-        }
-      ],
+        ]
+      },
       "setup": {
         "env_vars": ["GIT_USER_NAME", "GIT_USER_EMAIL"],
         "working_der": "~"
@@ -146,110 +130,124 @@
           "command": "sudo pacman -S --noconfirm --needed btop eza"
         }
       ],
-      "configs": [
-        {
-          "check": "if grep -q 'alias el=' ~/.zshrc; then echo 'true'; fi",
-          "command": {
+      "config": {
+        "commands": [
+          {
+            "check": "if grep -q 'alias el=' ~/.zshrc; then echo 'true'; fi",
             "command": "sed -i '/# Example aliases/a# Add alias for eza\nalias el=\"eza --long --icons=auto --color=auto --group-directories-first --sort=type --hyperlink\"\nalias et=\"eza --tree --icons=auto --level=2 --long --color=auto --group-directories-first --sort=type --hyperlink\"\nalias eta=\"eza --tree --icons=auto --level=2 --long --color=auto --group-directories-first --all --sort=type --hyperlink\"\nalias ea=\"eza --long --icons=auto --color=auto --group-directories-first --all --sort=type --hyperlink\"' ~/.zshrc"
+          },
+          {
+            "check": null,
+            "command": "source ~/.zshrc",
+            "shell": "Zsh"
           }
-        },
-        {
-          "check": null,
-          "command": { "command": "source ~/.zshrc" , "shell": "Zsh" }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Install Microsoft Edge Beta",
-      "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
       "commands": [
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "ArchLinux",
           "command": "yay -S --noconfirm --overwrite microsoft-edge-beta-bin"
         },
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "curl https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg"
         },
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/"
         },
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo sh -c 'echo \"deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main\" > /etc/apt/sources.list.d/microsoft-edge-beta.list'"
         },
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo rm microsoft.gpg"
         },
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo apt update -y"
         },
         {
+          "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo apt install microsoft-edge-beta -y"
         }
       ],
-      "configs": [
-        {
-          "command": {
+      "config": {
+        "commands": [
+          {
             "command": "echo '-> !TODO: Sign in to Microsoft Edge Beta'"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Install Visual Studio Code Insiders",
-      "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
       "commands": [
         {
+          "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
           "distribution": "ArchLinux",
           "command": "yay -S --noconfirm --overwrite visual-studio-code-insiders-bin"
         },
         {
+          "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "wget 'https://code.visualstudio.com/sha/download?build=insider&os=linux-deb-x64' -O ~/Downloads/vscode-insiders.deb"
         },
         {
+          "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo dpkg -i ~/Downloads/vscode-insiders.deb"
         }
       ],
-      "configs": [
-        {
-          "command": {
+      "config": {
+        "commands": [
+          {
             "command": "echo '-> !TODO: Sign in to Visual Studio Code Insiders'"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Install IBus Bamboo for Ubuntu",
-      "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
       "commands": [
         {
+          "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo add-apt-repository ppa:bamboo-engine/ibus-bamboo -y"
         },
         {
+          "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo apt update -y"
         },
         {
+          "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
           "command": "sudo apt install -y ibus ibus-bamboo"
         },
         {
+          "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
           "command": "ibus restart"
         },
         {
+          "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
           "command": "env DCONF_PROFILE=ibus dconf write /desktop/ibus/general/preload-engines \"['BambooUs', 'Bamboo']\""
         },
         {
+          "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
           "command": "gsettings set org.gnome.desktop.input-sources sources \"[('xkb', 'us'), ('ibus', 'BambooUs')]\""
         }
@@ -257,27 +255,25 @@
     },
     {
       "description": "Install Nerd Fonts for Ubuntu",
-      "check": "if [ -d /usr/share/fonts/Hack ]; then echo 'true'; fi",
       "commands": [
         {
+          "check": "if [ -d /usr/share/fonts/Hack ]; then echo 'true'; fi",
           "distribution": "Ubuntu",
           "command": "wget 'https://github.com/ryanoasis/nerd-fonts/releases/download/v3.1.1/Hack.zip' -O ~/Downloads/Hack.zip"
         }
       ],
-      "configs": [
-        {
-          "command": {
+      "config": {
+        "commands": [
+          {
             "distribution": "Ubuntu",
             "command": "sudo unzip -o ~/Downloads/Hack.zip -d /usr/share/fonts/Hack"
-          }
-        },
-        {
-          "command": {
+          },
+          {
             "distribution": "Ubuntu",
             "command": "sudo fc-cache -f -v"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Install Docker",
@@ -303,91 +299,85 @@
           "command": "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
         }
       ],
-      "configs": [
-        {
-          "check": "groups | grep -q 'docker' && echo 'true'",
-          "command": { "command": "sudo groupadd docker" }
-        },
-        {
-          "check": null,
-          "command": { "command": "sudo usermod -aG docker $USER" }
-        }
-      ]
+      "config": {
+        "commands": [
+          {
+            "command": "sudo groupadd docker",
+            "check": "groups | grep -q 'docker' && echo 'true'"
+          },
+          {
+            "check": null,
+            "command": "sudo usermod -aG docker $USER"
+          }
+        ]
+      }
     },
     {
       "description": "Setup structure for bash configuration",
-      "check": "if [ -d ~/.config/bash ]; then echo 'true'; fi",
       "commands": [
         {
+          "check": "if [ -d ~/.config/bash ]; then echo 'true'; fi",
           "command": "mkdir -p ~/.config/bash"
         }
       ],
-      "configs": [
-        {
-          "check": "if [ -f ~/.config/bash/.bash_history ]; then echo 'true'; fi",
-          "command": {
+      "config": {
+        "commands": [
+          {
+            "check": "if [ -f ~/.config/bash/.bash_history ]; then echo 'true'; fi",
             "command": "mv ~/.bash_history ~/.config/bash/.bash_history && ln -s ~/.config/bash/.bash_history ~/.bash_history"
-          }
-        },
-        {
-          "check": "if [ -f ~/.config/bash/.bash_logout ]; then echo 'true'; fi",
-          "command": {
+          },
+          {
+            "check": "if [ -f ~/.config/bash/.bash_logout ]; then echo 'true'; fi",
             "command": "mv ~/.bash_logout ~/.config/bash/.bash_logout && ln -s ~/.config/bash/.bash_logout ~/.bash_logout"
-          }
-        },
-        {
-          "check": "if [ -f ~/.config/bash/.bash_profile ]; then echo 'true'; fi",
-          "command": {
+          },
+          {
+            "check": "if [ -f ~/.config/bash/.bash_profile ]; then echo 'true'; fi",
             "command": "mv ~/.bash_profile ~/.config/bash/.bash_profile && ln -s ~/.config/bash/.bash_profile ~/.bash_profile"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Setup struct for zsh configuration",
-      "check": "if [ -d ~/.config/zsh ]; then echo 'true'; fi",
       "commands": [
         {
+          "check": "if [ -d ~/.config/zsh ]; then echo 'true'; fi",
           "command": "mkdir -p ~/.config/zsh"
         }
       ],
-      "configs": [
-        {
-          "check": "if [ -f ~/.config/zsh/.zshrc ] || [ -f ~/.zshrc ]; then echo 'true'; fi",
-          "command": {
+      "config": {
+        "commands": [
+          {
+            "check": "if [ -f ~/.config/zsh/.zshrc ] || [ -f ~/.zshrc ]; then echo 'true'; fi",
             "command": "mv ~/.zshrc ~/.config/zsh/.zshrc && ln -s ~/.config/zsh/.zshrc ~/.zshrc"
-          }
-        },
-        {
-          "check": "if [ -f ~/.config/zsh/.zsh_history ]; then echo 'true'; fi",
-          "command": {
+          },
+          {
+            "check": "if [ -f ~/.config/zsh/.zsh_history ]; then echo 'true'; fi",
             "command": "mv ~/.zsh_history ~/.config/zsh/.zsh_history && ln -s ~/.config/zsh/.zsh_history ~/.zsh_history"
-          }
-        },
-        {
-          "check": "if [ -d ~/.config/zsh/.oh-my-zsh ]; then echo 'true'; fi",
-          "command": {
+          },
+          {
+            "check": "if [ -d ~/.config/zsh/.oh-my-zsh ]; then echo 'true'; fi",
             "command": "mv ~/.oh-my-zsh ~/.config/zsh/.oh-my-zsh && ln -s ~/.config/zsh/.oh-my-zsh ~/.oh-my-zsh"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "Setup struct for git configuration",
-      "check": "if [ -d ~/.config/git ]; then echo 'true'; fi",
       "commands": [
         {
+          "check": "if [ -d ~/.config/git ]; then echo 'true'; fi",
           "command": "mkdir -p ~/.config/git"
         }
       ],
-      "configs": [
-        {
-          "check": "if [ -f ~/.config/git/.gitconfig ]; then echo 'true'; fi",
-          "command": {
+      "config": {
+        "commands": [
+          {
+            "check": "if [ -f ~/.config/git/.gitconfig ]; then echo 'true'; fi",
             "command": "mv ~/.gitconfig ~/.config/git/.gitconfig && ln -s ~/.config/git/.gitconfig ~/.gitconfig"
           }
-        }
-      ]
+        ]
+      }
     },
     {
       "description": "MTP: Mount Android Device",
