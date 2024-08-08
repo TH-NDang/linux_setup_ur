@@ -20,15 +20,20 @@ pub enum Status {
 impl Status {
     pub fn print_message(&self, message: &str) {
         use Status::*;
-        match self {
-            Running => println!("{}==> ⏳ Running:{} {}", self, Normal, message),
-            Success => println!("{}==> ✅ Success:{} {}", self, Normal, message),
-            Warning => println!("{}==> ⚠️ Warning:{} {}", self, Normal, message),
-            Failure => eprintln!("{}==> ❌ Failed:{} {}", self, Normal, message),
-            Skipped => println!("{}==> ⏭️ Skipped:{} {}", self, Normal, message),
-            Passed => println!("{}==> ✔️ Passed:{} {}", self, Normal, message),
-            Normal => println!("{}", message),
-        }
+        let (status_icon, status_text) = match self {
+            Running => ("⏳", "Running"),
+            Success => ("✅", "Success"),
+            Warning => ("⚠️", "Warning"),
+            Failure => ("❌", "Failed"),
+            Skipped => ("⏭️", "Skipped"),
+            Passed => ("✔️", "Passed"),
+            Normal => return println!("{}", message),
+        };
+        println!(
+            "{self_color}==> {status_icon} {status_text}{reset_color}: {message}",
+            self_color = self.to_color(),
+            reset_color = Color::None
+        );
     }
 }
 
