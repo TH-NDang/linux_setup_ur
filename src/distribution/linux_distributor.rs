@@ -22,12 +22,11 @@ impl LinuxDistributor for DistributionType {
             return DistributionType::ArchLinux;
         }
 
-        if lsb_path.exists() {
-            let content = fs::read_to_string(lsb_path).unwrap();
+        if let Ok(content) = fs::read_to_string(lsb_path) {
             if content.contains("Ubuntu") {
                 return DistributionType::Ubuntu;
             }
-        };
+        }
 
         DistributionType::Unknown
     }
