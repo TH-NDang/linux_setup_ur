@@ -311,10 +311,90 @@
         {
           "check": null,
           "command": { "command": "sudo usermod -aG docker $USER" }
+        }
+      ]
+    },
+    {
+      "description": "Setup structure for bash configuration",
+      "check": "if [ -d ~/.config/bash ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "mkdir -p ~/.config/bash"
+        }
+      ],
+      "configs": [
+        {
+          "check": "if [ -f ~/.config/bash/.bash_history ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.bash_history ~/.config/bash/.bash_history && ln -s ~/.config/bash/.bash_history ~/.bash_history"
+          }
         },
         {
-          "check": null,
-          "command": { "command": "newgrp docker" }
+          "check": "if [ -f ~/.config/bash/.bash_logout ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.bash_logout ~/.config/bash/.bash_logout && ln -s ~/.config/bash/.bash_logout ~/.bash_logout"
+          }
+        },
+        {
+          "check": "if [ -f ~/.config/bash/.bash_profile ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.bash_profile ~/.config/bash/.bash_profile && ln -s ~/.config/bash/.bash_profile ~/.bash_profile"
+          }
+        }
+      ]
+    },
+    {
+      "description": "Setup struct for zsh configuration",
+      "check": "if [ -d ~/.config/zsh ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "mkdir -p ~/.config/zsh"
+        }
+      ],
+      "configs": [
+        {
+          "check": "if [ -f ~/.config/zsh/.zshrc ] || [ -f ~/.zshrc ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.zshrc ~/.config/zsh/.zshrc && ln -s ~/.config/zsh/.zshrc ~/.zshrc"
+          }
+        },
+        {
+          "check": "if [ -f ~/.config/zsh/.zsh_history ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.zsh_history ~/.config/zsh/.zsh_history && ln -s ~/.config/zsh/.zsh_history ~/.zsh_history"
+          }
+        },
+        {
+          "check": "if [ -d ~/.config/zsh/.oh-my-zsh ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.oh-my-zsh ~/.config/zsh/.oh-my-zsh && ln -s ~/.config/zsh/.oh-my-zsh ~/.oh-my-zsh"
+          }
+        }
+      ]
+    },
+    {
+      "description": "Setup struct for git configuration",
+      "check": "if [ -d ~/.config/git ]; then echo 'true'; fi",
+      "commands": [
+        {
+          "command": "mkdir -p ~/.config/git"
+        }
+      ],
+      "configs": [
+        {
+          "check": "if [ -f ~/.config/git/.gitconfig ]; then echo 'true'; fi",
+          "command": {
+            "command": "mv ~/.gitconfig ~/.config/git/.gitconfig && ln -s ~/.config/git/.gitconfig ~/.gitconfig"
+          }
+        }
+      ]
+    },
+    {
+      "description": "MTP: Mount Android Device",
+      "commands": [
+        {
+          "distribution": "ArchLinux",
+          "command": "sudo pacman -S mtpfs libmtp gvfs-mtp --noconfirm"
         }
       ]
     }
