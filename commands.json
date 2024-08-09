@@ -109,7 +109,8 @@
           },
           {
             "check": "gh auth status | grep -q 'Logged in to github.com' && echo 'true'",
-            "command": "gh auth login"
+            "command": "gh auth login",
+            "run_spawn": true
           }
         ]
       },

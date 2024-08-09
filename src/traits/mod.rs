@@ -1,11 +1,10 @@
 mod command_runner;
 mod configurator;
+mod error_handler;
 pub mod executable_setup;
 mod repository;
-mod error_handler;
 
-pub use command_runner::CommandRunner;
+pub use command_runner::{CommandRunner, ProcessRunner};
 pub use configurator::Configurator;
-pub use repository::Repository;
 pub use error_handler::ErrorHandler;
-pub use command_runner::ProcessRunner;
+pub use repository::Repository;

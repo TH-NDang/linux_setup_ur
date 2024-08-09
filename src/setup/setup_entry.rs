@@ -5,8 +5,9 @@ use std::{fs, io};
 use serde::{Deserialize, Serialize};
 
 use crate::traits::executable_setup::ExecutableSetup;
+use crate::traits::ProcessRunner;
 use crate::Configurator;
-use crate::{utils::Status, CommandRunner, CommandStruct, Config};
+use crate::{utils::Status, CommandStruct, Config};
 
 #[derive(Serialize, Deserialize, Debug)]
 struct SetupItem {
@@ -69,7 +70,7 @@ impl SetupEntry {
         let failed = self
             .commands
             .iter()
-            .filter(|command| command.run() == Status::Failure)
+            .filter(|command| command.execute() == Status::Failure)
             .count();
 
         if failed > 0 {
@@ -103,10 +104,8 @@ impl SetupEntry {
             self.remove_command(*index);
         }
     }
-}
 
-impl CommandRunner for SetupEntry {
-    fn run(&self) -> Status {
+    pub fn run(&self) -> Status {
         let mut process = Status::Running;
 
         if process != Status::Success {
