@@ -31,11 +31,7 @@ impl SetupItem {
             for env_var in vars.iter() {
                 if std::env::var(env_var).is_err() {
                     println!("Environment variable `{}` not set.", env_var);
-                    let mut input = String::new();
-                    print!("Enter value for `{}`: ", env_var);
-                    io::stdout().flush()?;
-                    io::stdin().read_line(&mut input)?;
-                    let input = input.trim().to_string();
+                    let input = Self::get_env_value(env_var)?;
 
                     print!("You entered: {}. Is this correct? (y/n): ", input);
                     io::stdout().flush()?;
@@ -51,6 +47,15 @@ impl SetupItem {
             }
         }
         Ok(())
+    }
+
+    fn get_env_value(env_var: &String) -> Result<String, io::Error> {
+        let mut input = String::new();
+        print!("Enter value for `{}`: ", env_var);
+        io::stdout().flush()?;
+        io::stdin().read_line(&mut input)?;
+        let input = input.trim().to_string();
+        Ok(input)
     }
 }
 
