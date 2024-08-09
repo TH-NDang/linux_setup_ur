@@ -3,6 +3,7 @@ use std::{cell::RefCell, error, io, process};
 use serde::{Deserialize, Serialize};
 
 use super::shell::Shell;
+use crate::distribution::{ArchLinux, PackageInstaller, Ubuntu};
 use crate::{
     distribution::identify_linux_distribution, traits::ProcessRunner, utils::Status, CommandRunner,
     DistributionType, ErrorHandler,
@@ -19,8 +20,9 @@ pub struct CommandStruct {
     #[serde(skip)]
     status: RefCell<Status>,
     check: Option<String>,
-    #[serde(skip)]
     run_spawn: Option<bool>,
+    sudo: Option<bool>,
+    use_package_manager: Option<bool>,
 }
 impl CommandStruct {
     pub fn command(&self) -> &str {
@@ -60,9 +62,27 @@ impl CommandStruct {
 
 impl CommandRunner for CommandStruct {
     fn setup_command(&self) -> process::Command {
+        if self.use_package_manager.unwrap_or(false) {
+            match self.distribution.as_ref().unwrap() {
+                DistributionType::ArchLinux => {
+                    return ArchLinux::install_package(&self.command, self.sudo.unwrap_or(false))
+                }
+                DistributionType::Ubuntu => {
+                    return Ubuntu::install_package(&self.command, self.sudo.unwrap_or(false))
+                }
+                DistributionType::Unknown => (),
+            };
+        }
+
         let mut command =
             process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string());
-        command.arg("-c").arg(&self.command);
+        command.arg("-c");
+
+        if self.sudo.unwrap_or(false) {
+            command.arg("sudo");
+        }
+
+        command.arg(&self.command);
         command
     }
 
@@ -100,6 +120,10 @@ impl ProcessRunner for CommandStruct {
             Status::Passed => Status::Passed,
             _ => Status::Success,
         }
+    }
+
+    fn print_pre_run_info(&self) {
+        Status::Running.print_message(&format!("{}", self.command));
     }
 }
 

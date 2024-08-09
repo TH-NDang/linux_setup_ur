@@ -56,6 +56,7 @@ pub trait CommandRunner: ErrorHandler {
 pub trait ProcessRunner: CommandRunner {
     fn before_run(&self) -> Status;
     fn after_run(&self, command_status: Status) -> Status;
+    fn print_pre_run_info(&self);
     fn execute(&self) -> Status {
         match self.before_run() {
             Status::Passed => return Status::Passed,
@@ -64,6 +65,7 @@ pub trait ProcessRunner: CommandRunner {
             _ => (),
         };
 
+        self.print_pre_run_info();
         let status = self.run();
 
         match self.after_run(status) {

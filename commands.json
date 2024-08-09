@@ -5,11 +5,14 @@
       "commands": [
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -Syu --noconfirm"
+          "command": "pacman -Syu --noconfirm",
+          "sudo": true
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt update -y && sudo apt upgrade -y"
+          "command": "apt update -y && sudo apt upgrade -y",
+          "sudo": true,
+          "use_package_manager": false
         }
       ]
     },
@@ -18,11 +21,15 @@
       "commands": [
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm --needed curl wget zsh git"
+          "command": "curl wget zsh git",
+          "sudo": true,
+          "use_package_manager": true
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y curl wget zsh git"
+          "command": "curl wget zsh git",
+          "sudo": true,
+          "use_package_manager": true
         }
       ],
       "config": {
@@ -77,11 +84,15 @@
       "commands": [
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm --needed git"
+          "command": "git",
+          "sudo": true,
+          "use_package_manager": true
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y git"
+          "command": "git",
+          "sudo": true,
+          "use_package_manager": true
         }
       ],
       "config": {
@@ -101,11 +112,15 @@
           },
           {
             "distribution": "Ubuntu",
-            "command": "sudo apt install gh -y"
+            "command": "gh",
+            "sudo": true,
+            "use_package_manager": true
           },
           {
             "distribution": "ArchLinux",
-            "command": "sudo pacman -S --noconfirm --needed github-cli"
+            "command": "github-cli",
+            "sudo": true,
+            "use_package_manager": true
           },
           {
             "check": "gh auth status | grep -q 'Logged in to github.com' && echo 'true'",
@@ -124,11 +139,15 @@
       "commands": [
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y btop eza gnome-tweaks"
+          "command": "btop eza gnome-tweaks",
+          "sudo": true,
+          "use_package_manager": true
         },
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S --noconfirm --needed btop eza"
+          "command": "btop eza",
+          "sudo": true,
+          "use_package_manager": true
         }
       ],
       "config": {
@@ -151,7 +170,8 @@
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "ArchLinux",
-          "command": "yay -S --noconfirm --overwrite microsoft-edge-beta-bin"
+          "command": "microsoft-edge-beta-bin",
+          "use_package_manager": true
         },
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
@@ -161,27 +181,34 @@
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/"
+          "command": "install -o root -g root -m 644 microsoft.gpg /etc/apt/trusted.gpg.d/",
+          "sudo": true
         },
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo sh -c 'echo \"deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main\" > /etc/apt/sources.list.d/microsoft-edge-beta.list'"
+          "command": "sh -c 'echo \"deb [arch=amd64] https://packages.microsoft.com/repos/edge stable main\" > /etc/apt/sources.list.d/microsoft-edge-beta.list'",
+          "sudo": true
         },
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo rm microsoft.gpg"
+          "command": "rm microsoft.gpg",
+          "sudo": true
         },
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo apt update -y"
+          "command": "apt update -y",
+          "sudo": true,
+          "use_package_manager": false
         },
         {
           "check": "microsoft-edge-beta --version | grep -q 'Microsoft Edge' && echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo apt install microsoft-edge-beta -y"
+          "command": "microsoft-edge-beta",
+          "sudo": true,
+          "use_package_manager": true
         }
       ],
       "config": {
@@ -198,7 +225,8 @@
         {
           "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
           "distribution": "ArchLinux",
-          "command": "yay -S --noconfirm --overwrite visual-studio-code-insiders-bin"
+          "command": "visual-studio-code-insiders-bin",
+          "use_package_manager": true
         },
         {
           "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
@@ -208,7 +236,8 @@
         {
           "check": "code-insiders --version | grep -q 'insider' && echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo dpkg -i ~/Downloads/vscode-insiders.deb"
+          "command": "dpkg -i ~/Downloads/vscode-insiders.deb",
+          "sudo": true
         }
       ],
       "config": {
@@ -225,17 +254,20 @@
         {
           "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo add-apt-repository ppa:bamboo-engine/ibus-bamboo -y"
+          "command": "add-apt-repository ppa:bamboo-engine/ibus-bamboo -y",
+          "sudo": true
         },
         {
           "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo apt update -y"
+          "command": "apt update -y",
+          "sudo": true
         },
         {
           "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y ibus ibus-bamboo"
+          "command": "apt install -y ibus ibus-bamboo",
+          "sudo": true
         },
         {
           "check": "command -v dpkg >/dev/null 2>&1 && dpkg -l | grep -q 'ibus' && echo 'true' || echo 'true'",
@@ -267,11 +299,13 @@
         "commands": [
           {
             "distribution": "Ubuntu",
-            "command": "sudo unzip -o ~/Downloads/Hack.zip -d /usr/share/fonts/Hack"
+            "command": "unzip -o ~/Downloads/Hack.zip -d /usr/share/fonts/Hack",
+            "sudo": true
           },
           {
             "distribution": "Ubuntu",
-            "command": "sudo fc-cache -f -v"
+            "command": "fc-cache -f -v",
+            "sudo": true
           }
         ]
       }
@@ -281,7 +315,8 @@
       "commands": [
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y ca-certificates curl apt-transport-https"
+          "command": "apt install -y ca-certificates curl apt-transport-https",
+          "sudo": true
         },
         {
           "distribution": "Ubuntu",
@@ -293,22 +328,27 @@
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt update -y"
+          "command": "apt update -y",
+          "sudo": true
         },
         {
           "distribution": "Ubuntu",
-          "command": "sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin"
+          "command": "docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin",
+          "sudo": true,
+          "use_package_manager": true
         }
       ],
       "config": {
         "commands": [
           {
-            "command": "sudo groupadd docker",
+            "command": "groupadd docker",
+            "sudo": true,
             "check": "groups | grep -q 'docker' && echo 'true'"
           },
           {
             "check": null,
-            "command": "sudo usermod -aG docker $USER"
+            "command": "usermod -aG docker $USER",
+            "sudo": true
           }
         ]
       }
@@ -385,7 +425,8 @@
       "commands": [
         {
           "distribution": "ArchLinux",
-          "command": "sudo pacman -S mtpfs libmtp gvfs-mtp --noconfirm"
+          "command": "pacman -S mtpfs libmtp gvfs-mtp --noconfirm",
+          "sudo": true
         }
       ]
     }
