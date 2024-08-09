@@ -1,4 +1,9 @@
-use std::{fmt::Display, fs, path::PathBuf};
+use std::{
+    fmt::{Debug, Display},
+    fs,
+    path::PathBuf,
+    process,
+};
 
 use serde::{Deserialize, Serialize};
 
@@ -45,6 +50,90 @@ impl Display for DistributionType {
 /// Identifies the Linux distribution by calling the `check` method of `DistributionType`.
 pub fn identify_linux_distribution() -> DistributionType {
     DistributionType::check()
+}
+
+pub trait PackageInstaller: Debug {
+    fn install_package(package: &str, use_sudo: bool) -> process::Command;
+    fn remove_package(package: &str, use_sudo: bool) -> process::Command;
+    fn package_manager() -> Self;
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub enum ArchLinux {
+    #[default]
+    Pacman,
+    Yay,
+}
+
+impl PackageInstaller for ArchLinux {
+    fn install_package(package: &str, use_sudo: bool) -> process::Command {
+        let _ = use_sudo;
+        let mut command: process::Command;
+        match Self::package_manager() {
+            ArchLinux::Pacman => {
+                command = process::Command::new("pacman");
+                command.arg("-S");
+                command.args(["--noconfirm", "--needed"]);
+                command.arg(package);
+            }
+            ArchLinux::Yay => {
+                command = process::Command::new("yay");
+                command.arg("-S");
+                command.args(["--noconfirm", "--overwrite"]);
+                command.arg(package);
+            }
+        };
+
+        command
+    }
+
+    fn remove_package(package: &str, use_sudo: bool) -> process::Command {
+        todo!()
+    }
+
+    fn package_manager() -> Self {
+        let ouput = process::Command::new("yay")
+            .arg("--version")
+            .output()
+            .expect("Failed to check for yay");
+
+        String::from_utf8_lossy(&ouput.stdout)
+            .contains("yay v")
+            .then(|| ArchLinux::Yay)
+            .unwrap_or(ArchLinux::Pacman)
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Default)]
+pub enum Ubuntu {
+    #[default]
+    Apt,
+}
+
+impl PackageInstaller for Ubuntu {
+    fn install_package(package: &str, use_sudo: bool) -> process::Command {
+        let mut command: process::Command;
+
+        if use_sudo {
+            command = process::Command::new("sudo");
+            command.arg("apt");
+        } else {
+            command = process::Command::new("apt");
+        }
+
+        command.args(["install", "-y"]);
+        command.arg(package);
+
+        command
+    }
+
+    fn remove_package(package: &str, use_sudo: bool) -> process::Command {
+        todo!()
+    }
+
+    fn package_manager() -> Self {
+        todo!()
+    }
 }
 
 #[cfg(test)]

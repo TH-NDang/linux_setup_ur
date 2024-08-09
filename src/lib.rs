@@ -9,5 +9,5 @@ pub use command::CommandStruct;
 pub use config::Config;
 pub use distribution::DistributionType;
 pub use setup::{SetupEntry, SetupRegistry};
-pub use traits::{CommandRunner, Configurator, Repository};
+pub use traits::{CommandRunner, Configurator, ErrorHandler, Repository};
 pub use utils::Color;

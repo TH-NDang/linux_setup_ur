@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{utils::Status, CommandStruct, Configurator};
+use crate::{traits::ProcessRunner, utils::Status, CommandStruct, Configurator};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Config {
@@ -13,7 +13,7 @@ impl Configurator for Config {
         let failed = self
             .commands
             .iter()
-            .filter(|command| command.interact_mode() == Status::Failure)
+            .filter(|command| command.execute() == Status::Failure)
             .count();
 
         if failed > 0 {

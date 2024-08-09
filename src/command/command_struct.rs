@@ -3,8 +3,10 @@ use std::{cell::RefCell, error, io, process};
 use serde::{Deserialize, Serialize};
 
 use super::shell::Shell;
+use crate::distribution::{ArchLinux, PackageInstaller, Ubuntu};
 use crate::{
-    distribution::identify_linux_distribution, utils::Status, CommandRunner, DistributionType,
+    distribution::identify_linux_distribution, traits::ProcessRunner, utils::Status, CommandRunner,
+    DistributionType, ErrorHandler,
 };
 
 const COMMAND_NOT_FOUND: &str = "Command not found";
@@ -18,6 +20,9 @@ pub struct CommandStruct {
     #[serde(skip)]
     status: RefCell<Status>,
     check: Option<String>,
+    run_spawn: Option<bool>,
+    sudo: Option<bool>,
+    use_package_manager: Option<bool>,
 }
 impl CommandStruct {
     pub fn command(&self) -> &str {
@@ -33,116 +38,9 @@ impl CommandStruct {
         false
     }
 
-    fn run_command(&self) -> Result<process::Output, io::Error> {
-        process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
-            .arg("-c")
-            .arg(&self.command)
-            .output()
-    }
-
-    fn handle_command_error(&self, stderr: &str) -> io::Error {
-        if stderr.contains(COMMAND_NOT_FOUND) {
-            io::Error::new(io::ErrorKind::NotFound, COMMAND_NOT_FOUND)
-        } else {
-            io::Error::new(io::ErrorKind::Other, COMMAND_EXECUTION_FAILED)
-        }
-    }
-
-    fn spawn_command(&self) -> Result<process::Child, io::Error> {
-        process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string())
-            .arg("-c")
-            .arg(&self.command)
-            .spawn()
-    }
-
-    fn handle_status(&self, exit_status: &std::process::ExitStatus) -> Status {
-        match exit_status.code() {
-            Some(0) => {
-                self.set_status(Status::Success, &format!("{}", self.command));
-                self.status.borrow().clone()
-            }
-            Some(_) => {
-                self.set_status(
-                    Status::Failure,
-                    &format!("{} [Exit code: {:?}]", self.command, exit_status.code()),
-                );
-                self.status.borrow().clone()
-            }
-            None => {
-                self.set_status(
-                    Status::Failure,
-                    &format!("{} [Command terminated by signal]", self.command),
-                );
-                self.status.borrow().clone()
-            }
-        }
-    }
-
     fn set_status(&self, status: Status, message: &str) {
         self.status.replace(status);
         self.status.borrow().print_message(message);
-    }
-
-    fn execute_command(&self) -> io::Result<String> {
-        if self.should_skip() {
-            self.status.replace(Status::Skipped);
-            return Ok("Skipped".to_string());
-        }
-
-        if self.check.is_some() {
-            if let Ok(result) =
-                self.validate_command(|output| !String::from_utf8_lossy(&output.stdout).is_empty())
-            {
-                if result {
-                    self.set_status(Status::Passed, &format!("{}", self.command));
-                    return Ok("Passed".to_string());
-                }
-            }
-        }
-
-        let output = self.run_command()?;
-        if output.status.success() {
-            let output_str = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            self.set_status(Status::Success, &format!("{}", self.command));
-            Ok(output_str)
-        } else {
-            self.set_status(Status::Failure, &format!("{}", self.command));
-            Err(self.handle_command_error(&String::from_utf8_lossy(&output.stderr)))
-        }
-    }
-
-    pub fn interact_mode(&self) -> Status {
-        if self.should_skip() {
-            self.status.replace(Status::Skipped);
-            return self.status.borrow().clone();
-        }
-
-        if self.check.is_some() {
-            if let Ok(result) =
-                self.validate_command(|output| !String::from_utf8_lossy(&output.stdout).is_empty())
-            {
-                if result {
-                    self.set_status(Status::Passed, &format!("{}", self.command));
-                    return self.status.borrow().clone();
-                }
-            }
-        }
-
-        let mut child = match self.spawn_command() {
-            Ok(child) => child,
-            Err(err) => {
-                self.set_status(Status::Failure, &format!("Error: {}", err));
-                return self.status.borrow().clone();
-            }
-        };
-
-        match &child.wait() {
-            Ok(status) => self.handle_status(status),
-            Err(err) => {
-                self.set_status(Status::Failure, &format!("Error to wait on child: {}", err));
-                self.status.borrow().clone()
-            }
-        }
     }
 
     fn validate_command(
@@ -161,15 +59,80 @@ impl CommandStruct {
         self.distribution.as_ref()
     }
 }
+
 impl CommandRunner for CommandStruct {
-    fn run(&self) -> Status {
-        match self.execute_command() {
-            Ok(_) => self.status.borrow().clone(),
-            Err(e) => {
-                self.set_status(Status::Failure, &format!("{}", self.command));
-                eprintln!("Error: {}", e);
-                Status::Failure
+    fn setup_command(&self) -> process::Command {
+        if self.use_package_manager.unwrap_or(false) {
+            match self.distribution.as_ref().unwrap() {
+                DistributionType::ArchLinux => {
+                    return ArchLinux::install_package(&self.command, self.sudo.unwrap_or(false))
+                }
+                DistributionType::Ubuntu => {
+                    return Ubuntu::install_package(&self.command, self.sudo.unwrap_or(false))
+                }
+                DistributionType::Unknown => (),
+            };
+        }
+
+        let mut command =
+            process::Command::new(self.shell.as_ref().unwrap_or(&Shell::Sh).to_string());
+        command.arg("-c");
+
+        if self.sudo.unwrap_or(false) {
+            command.arg("sudo");
+        }
+
+        command.arg(&self.command);
+        command
+    }
+
+    fn is_run_spawn(&self) -> bool {
+        self.run_spawn.unwrap_or(false)
+    }
+}
+
+impl ProcessRunner for CommandStruct {
+    fn before_run(&self) -> Status {
+        if self.should_skip() {
+            return Status::Skipped;
+        }
+
+        if self.check.is_some() {
+            if let Ok(result) =
+                self.validate_command(|output| !String::from_utf8_lossy(&output.stdout).is_empty())
+            {
+                if result {
+                    self.set_status(Status::Passed, &format!("{}", self.command));
+                    return Status::Passed;
+                }
             }
+        }
+
+        Status::Success
+    }
+
+    fn after_run(&self, command_status: Status) -> Status {
+        self.status.replace(command_status.clone());
+
+        match command_status {
+            Status::Failure => Status::Failure,
+            Status::Skipped => Status::Skipped,
+            Status::Passed => Status::Passed,
+            _ => Status::Success,
+        }
+    }
+
+    fn print_pre_run_info(&self) {
+        Status::Running.print_message(&format!("{}", self.command));
+    }
+}
+
+impl ErrorHandler for CommandStruct {
+    fn handle_command_error(stderr: &str) -> io::Error {
+        if stderr.contains(COMMAND_NOT_FOUND) {
+            io::Error::new(io::ErrorKind::NotFound, COMMAND_NOT_FOUND)
+        } else {
+            io::Error::new(io::ErrorKind::Other, COMMAND_EXECUTION_FAILED)
         }
     }
 }
@@ -181,63 +144,6 @@ mod tests {
     use std::process::Output;
 
     #[test]
-    fn test_execute_command_success() {
-        let command_struct = CommandStruct {
-            command: "echo Hello".to_string(),
-            shell: Some(Shell::Sh),
-            distribution: None,
-            status: RefCell::new(Status::Normal),
-            check: None,
-        };
-
-        let result = command_struct.execute_command();
-        assert!(result.is_ok());
-        assert_eq!(result.unwrap(), "Hello");
-    }
-
-    #[test]
-    fn test_execute_command_failure() {
-        let command_struct = CommandStruct {
-            command: "invalid_command".to_string(),
-            shell: Some(Shell::Sh),
-            distribution: None,
-            status: RefCell::new(Status::Normal),
-            check: None,
-        };
-
-        let result = command_struct.execute_command();
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn test_interact_mode_success() {
-        let command_struct = CommandStruct {
-            command: "echo Hello".to_string(),
-            shell: Some(Shell::Sh),
-            distribution: None,
-            status: RefCell::new(Status::Normal),
-            check: None,
-        };
-
-        let status = command_struct.interact_mode();
-        assert_eq!(status, Status::Success);
-    }
-
-    #[test]
-    fn test_interact_mode_failure() {
-        let command_struct = CommandStruct {
-            command: "invalid_command".to_string(),
-            shell: Some(Shell::Sh),
-            distribution: None,
-            status: RefCell::new(Status::Normal),
-            check: None,
-        };
-
-        let status = command_struct.interact_mode();
-        assert_eq!(status, Status::Failure);
-    }
-
-    #[test]
     fn test_validate_command_success() {
         let command = CommandStruct {
             command: "echo Hello".to_string(),
@@ -245,6 +151,7 @@ mod tests {
             distribution: None,
             status: RefCell::new(Status::Normal),
             check: Some("echo true".to_string()),
+            run_spawn: Some(false),
         };
 
         let check =
@@ -263,6 +170,7 @@ mod tests {
             distribution: None,
             status: RefCell::new(Status::Normal),
             check: Some("echo".to_string()),
+            run_spawn: Some(false),
         };
 
         let check =
@@ -281,6 +189,7 @@ mod tests {
             distribution: None,
             status: RefCell::new(Status::Normal),
             check: None,
+            run_spawn: Some(false),
         };
 
         let status = command_struct.run();
@@ -295,6 +204,7 @@ mod tests {
             distribution: None,
             status: RefCell::new(Status::Normal),
             check: None,
+            run_spawn: Some(false),
         };
 
         let status = command_struct.run();
@@ -318,6 +228,7 @@ mod tests {
             distribution: None,
             status: RefCell::new(Status::Normal),
             check: None,
+            run_spawn: Some(false),
         };
 
         let status = command_struct.run();
